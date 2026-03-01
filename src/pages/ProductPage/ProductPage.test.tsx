@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import ProductPage from './ProductPage'
@@ -6,10 +6,22 @@ import authReducer from '@/features/auth/authSlice'
 import productsReducer from '@/features/products/productsSlice'
 import cartReducer from '@/features/cart/cartSlice'
 import checkoutReducer from '@/features/checkout/checkoutSlice'
-import { fetchProducts } from '@/features/products/productsSlice'
 
 // Mock de axios
 jest.mock('axios')
+
+// Mock de react-router-dom
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}))
+
+// Mock de fetchProducts para que no haga nada
+jest.mock('@/features/products/productsSlice', () => ({
+  ...jest.requireActual('@/features/products/productsSlice'),
+  fetchProducts: jest.fn(() => ({ type: 'products/fetchProducts', payload: undefined })),
+}))
 
 // Helper para crear un store de prueba
 const createTestStore = (initialState = {}) => {
@@ -36,16 +48,30 @@ const renderWithStore = (component: React.ReactElement, initialState = {}) => {
 describe('ProductPage Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockNavigate.mockClear()
   })
 
   describe('Rendering inicial', () => {
     it('debe renderizar el componente correctamente', () => {
-      renderWithStore(<ProductPage />)
+      const initialState = {
+        auth: { token: null, isAuthenticated: false, loading: false, error: null },
+        products: { items: [], loading: false, error: null },
+        cart: { items: [], shippingAddress: null, paymentInfo: null },
+        checkout: { transaction: null, loading: false, error: null, pollingActive: false },
+      }
+      renderWithStore(<ProductPage />, initialState)
       expect(screen.getByText('Productos Disponibles')).toBeInTheDocument()
+      expect(screen.getByText('Checkout Store')).toBeInTheDocument()
     })
 
     it('debe mostrar el estado de carga inicialmente', () => {
-      renderWithStore(<ProductPage />)
+      const initialState = {
+        auth: { token: null, isAuthenticated: false, loading: false, error: null },
+        products: { items: [], loading: true, error: null },
+        cart: { items: [], shippingAddress: null, paymentInfo: null },
+        checkout: { transaction: null, loading: false, error: null, pollingActive: false },
+      }
+      renderWithStore(<ProductPage />, initialState)
       expect(screen.getByText('Cargando productos...')).toBeInTheDocument()
     })
 
@@ -246,9 +272,6 @@ describe('ProductPage Component', () => {
         checkout: { transaction: null, loading: false, error: null, pollingActive: false },
       }
 
-      // Mock de window.alert
-      jest.spyOn(window, 'alert').mockImplementation(() => {})
-
       const { store } = renderWithStore(<ProductPage />, initialState)
 
       const buyButton = screen.getByText('Comprar')
@@ -259,7 +282,7 @@ describe('ProductPage Component', () => {
       expect(cartState.items[0].product.id).toBe('1')
       expect(cartState.items[0].quantity).toBe(1)
 
-      expect(window.alert).toHaveBeenCalledWith('Producto Test añadido al carrito')
+      expect(mockNavigate).toHaveBeenCalledWith('/checkout')
     })
 
     it('debe deshabilitar el botón cuando no hay stock', () => {

@@ -1,11 +1,21 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProductPage from './pages/ProductPage/ProductPage'
+import CheckoutPage from './pages/CheckoutPage/CheckoutPage'
 import './App.scss'
 
 function App() {
   return (
-    <div className="app">
-      <ProductPage />
-    </div>
+    <BrowserRouter>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<Navigate to="/products" replace />} />
+          <Route path="/products" element={<ProductPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout/summary" element={<div style={{padding: '2rem'}}>Summary Page - Coming Soon</div>} />
+          <Route path="*" element={<Navigate to="/products" replace />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   )
 }
 
