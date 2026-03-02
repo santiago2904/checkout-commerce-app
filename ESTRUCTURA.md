@@ -40,13 +40,26 @@ checkout-commerce-app/
     │   └── 📄 hooks.ts               # Hooks tipados (useAppDispatch, useAppSelector)
     │
     ├── 📁 pages/                      # Componentes de página
-    │   └── 📁 ProductPage/
-    │       ├── 📄 ProductPage.tsx    # Componente principal
-    │       ├── 📄 ProductPage.scss   # Estilos (Mobile-First)
-    │       └── 📄 ProductPage.test.tsx # Pruebas TDD (>80% coverage)
+    │   ├── 📁 ProductPage/
+    │   │   ├── 📄 ProductPage.tsx    # Listado de productos
+    │   │   ├── 📄 ProductPage.scss   # Estilos (Mobile-First)
+    │   │   └── 📄 ProductPage.test.tsx # Pruebas TDD (>80% coverage)
+    │   │
+    │   └── 📁 CheckoutPage/
+    │       ├── 📄 CheckoutPage.tsx   # Flujo de checkout con steps
+    │       ├── 📄 CheckoutPage.scss  # Estilos responsive
+    │       └── 📄 CheckoutPage.test.tsx # Pruebas TDD
     │
     ├── 📁 components/                 # Componentes reutilizables
-    │   └── (vacío - próximas fases)
+    │   ├── 📁 DeliveryForm/
+    │   │   ├── 📄 DeliveryForm.tsx   # Formulario de envío
+    │   │   ├── 📄 DeliveryForm.scss  # Estilos Mobile-First
+    │   │   └── 📄 DeliveryForm.test.tsx # Pruebas TDD (50+ casos)
+    │   │
+    │   └── 📁 CreditCardModal/
+    │       ├── 📄 CreditCardModal.tsx # Modal de pago con detección VISA/MC
+    │       ├── 📄 CreditCardModal.scss # Estilos responsive
+    │       └── 📄 CreditCardModal.test.tsx # Pruebas TDD (80+ casos)
     │
     ├── 📁 types/                      # TypeScript types
     │   └── 📄 index.ts               # Tipos globales del proyecto
@@ -97,10 +110,10 @@ Componentes que representan páginas completas:
 
 #### 🧩 `/components/`
 
-Componentes reutilizables (próximas fases):
-- Modal (para tarjeta de crédito)
-- Backdrop (para resumen)
-- Forms, Buttons, etc.
+Componentes reutilizables:
+- **DeliveryForm/**: Formulario de dirección de envío con validación
+- **CreditCardModal/**: Modal de pago con detección VISA/MasterCard
+- Próximos: Backdrop (resumen), Loader, etc.
 
 #### 📘 `/types/`
 
@@ -130,34 +143,63 @@ El store y la configuración de persistencia están en `/store/`.
 ### 5. **Mobile-First**
 Todos los estilos SCSS siguen el enfoque Mobile-First (base: 375px).
 
-## 📊 Métricas de la Fase 1
+## 📊 Métricas del Proyecto (Fase 1 + 2 Completas)
 
-- **Archivos TypeScript/TSX**: 14
-- **Archivos SCSS**: 3
+- **Archivos TypeScript/TSX**: 23
+- **Archivos SCSS**: 6
 - **Archivos de configuración**: 6
-- **Tests**: 1 archivo con 20+ casos de prueba
+- **Tests**: 3 archivos con 150+ casos de prueba totales
 - **Slices de Redux**: 4
-- **Páginas implementadas**: 1 de 5
+- **Páginas implementadas**: 2 (ProductPage, CheckoutPage)
+- **Componentes reutilizables**: 2 (DeliveryForm, CreditCardModal)
+- **Rutas configuradas**: 5
+
+## �️ Sistema de Rutas (React Router)
+
+El proyecto utiliza **React Router v6** para navegación entre páginas:
+
+| Ruta | Componente | Descripción |
+|------|-----------|-------------|
+| `/` | Redirect → `/products` | Ruta raíz redirige a productos |
+| `/products` | `ProductPage` | Listado de productos disponibles |
+| `/checkout` | `CheckoutPage` | Flujo de checkout (delivery + payment) |
+| `/checkout/summary` | Summary Page | Resumen final antes de pagar (Fase 3) |
+| `*` | Redirect → `/products` | Rutas no encontradas redirigen a inicio |
+
+### Flujo de Navegación
+
+```
+ProductPage (click "Comprar")
+    ↓
+CheckoutPage - Step 1: Delivery Form
+    ↓ (completar formulario)
+CheckoutPage - Step 2: Credit Card Modal
+    ↓ (guardar tarjeta)
+/checkout/summary - Summary Backdrop (Fase 3)
+    ↓ (confirmar pago)
+Status Page con Polling (Fase 4)
+    ↓ (APPROVED/DECLINED)
+Redirect a ProductPage (Fase 5)
+```
+
+### Características del Router
+
+- **BrowserRouter** configurado en `App.tsx`
+- **useNavigate()** hook para navegación programática
+- **Protección de rutas**: CheckoutPage redirige si carrito vacío
+- **Persistencia**: Redux Persist mantiene el estado entre navegaciones
 
 ## 🔄 Próximas Adiciones
 
-En las siguientes fases se agregarán:
+En la Fase 3 se agregará:
 
 ```
 src/
 ├── pages/
-│   ├── DeliveryPage/
-│   ├── SummaryPage/
-│   └── StatusPage/
+│   └── SummaryPage/         # Resumen con backdrop
 │
-├── components/
-│   ├── Modal/
-│   ├── Backdrop/
-│   ├── CreditCardForm/
-│   └── DeliveryForm/
-│
-└── services/
-    └── api.ts (opcional, si abstraemos más las llamadas)
+└── components/
+    └── Backdrop/            # Componente de backdrop reutilizable
 ```
 
 ## 💡 Notas de Arquitectura

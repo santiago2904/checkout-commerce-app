@@ -1,0 +1,263 @@
+@use '@/styles/variables' as *;
+
+.payment-summary-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.payment-summary-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid $border-color;
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: $text-color;
+    }
+
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: $gray;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.3s ease;
+
+      &:hover:not(:disabled) {
+        color: $text-color;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+
+    h3 {
+      font-size: 1.125rem;
+      margin: 0 0 1rem 0;
+      color: $text-color;
+    }
+
+    .order-items {
+      margin-bottom: 1.5rem;
+
+      .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid $border-color;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .item-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+
+          .item-name {
+            font-weight: 500;
+            color: $text-color;
+          }
+
+          .item-quantity {
+            font-size: 0.875rem;
+            color: $gray;
+          }
+        }
+
+        .item-price {
+          font-weight: 600;
+          color: $text-color;
+        }
+      }
+    }
+
+    .price-breakdown {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+
+      .price-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.9375rem;
+
+        &.total {
+          border-top: 2px solid $border-color;
+          padding-top: 0.75rem;
+          margin-top: 0.5rem;
+          font-weight: 600;
+          font-size: 1.125rem;
+          color: $primary-color;
+        }
+
+        .free-shipping {
+          color: #28a745;
+          font-weight: 500;
+        }
+      }
+    }
+
+    .shipping-summary {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+
+      p {
+        margin: 0.25rem 0;
+        font-size: 0.9375rem;
+        color: $gray;
+
+        &:first-of-type {
+          font-weight: 600;
+          color: $text-color;
+        }
+      }
+    }
+
+    .terms-section {
+      margin-bottom: 1rem;
+
+      .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        cursor: pointer;
+
+        input[type='checkbox'] {
+          margin-top: 0.25rem;
+          cursor: pointer;
+          width: 18px;
+          height: 18px;
+          flex-shrink: 0;
+
+          &:disabled {
+            cursor: not-allowed;
+          }
+        }
+
+        span {
+          font-size: 0.9375rem;
+          color: $text-color;
+          line-height: 1.5;
+
+          a {
+            color: $primary-color;
+            text-decoration: none;
+            font-weight: 500;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+    }
+
+    .error-message {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 0.9375rem;
+    }
+
+    .loading-message {
+      text-align: center;
+      color: $gray;
+      padding: 1rem;
+      font-size: 0.9375rem;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid $border-color;
+
+    button {
+      flex: 1;
+      padding: 0.875rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+
+    .cancel-button {
+      background-color: white;
+      color: $gray;
+      border: 1px solid $border-color;
+
+      &:hover:not(:disabled) {
+        background-color: #f8f9fa;
+      }
+    }
+
+    .confirm-button {
+      background-color: $primary-color;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: darken($primary-color, 10%);
+      }
+    }
+  }
+}
+
+// Tablet and Desktop
+@media (min-width: $breakpoint-tablet) {
+  .payment-summary-modal {
+    max-width: 560px;
+  }
+}

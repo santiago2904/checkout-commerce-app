@@ -8,6 +8,7 @@ Aplicación Single Page Application (SPA) en React para un flujo de checkout con
 
 - **Framework:** React 18 + TypeScript
 - **Build Tool:** Vite
+- **Routing:** React Router v6
 - **Estado:** Redux Toolkit (Flux Architecture)
 - **Persistencia:** Redux Persist (localStorage)
 - **Estilos:** SASS (Mobile-First Design)
@@ -30,13 +31,24 @@ checkout-commerce-app/
 │   │       └── checkoutSlice.ts
 │   │
 │   ├── pages/             # Componentes de página
-│   │   └── ProductPage/   # Página de productos
-│   │       ├── ProductPage.tsx
-│   │       ├── ProductPage.scss
-│   │       └── ProductPage.test.tsx
-│   │
-│   ├── components/        # Componentes reutilizables
-│   │   └── (próximamente: Modal, Backdrop, etc.)
+   │   ├── ProductPage/   # Página de productos
+   │   │   ├── ProductPage.tsx
+   │   │   ├── ProductPage.scss
+   │   │   └── ProductPage.test.tsx
+   │   └── CheckoutPage/  # Página de checkout
+   │       ├── CheckoutPage.tsx
+   │       ├── CheckoutPage.scss
+   │       └── CheckoutPage.test.tsx
+   │
+   ├── components/        # Componentes reutilizables
+   │   ├── DeliveryForm/  # Formulario de envío
+   │   │   ├── DeliveryForm.tsx
+   │   │   ├── DeliveryForm.scss
+   │   │   └── DeliveryForm.test.tsx
+   │   └── CreditCardModal/ # Modal de tarjeta de crédito
+   │       ├── CreditCardModal.tsx
+   │       ├── CreditCardModal.scss
+   │       └── CreditCardModal.test.tsx
 │   │
 │   ├── store/            # Configuración del Store
 │   │   ├── store.ts      # Store + redux-persist
@@ -86,9 +98,66 @@ npm run test:coverage
 npm run build
 ```
 
-## 🎯 Fase 1 - Completada
+## ⚙️ Configuración del API
 
-### ✅ Lo implementado
+La aplicación se conecta a un backend API para procesar pagos. La URL base del API está configurada en `src/config/api.ts`.
+
+### URL por Defecto
+
+Por defecto, la aplicación apunta a `http://localhost:3000`. Si tu backend API corre en una URL diferente:
+
+**Opción 1: Cambiar directamente en el código**
+```typescript
+// src/config/api.ts
+export const API_CONFIG = {
+  baseUrl: 'https://tu-api.com', // Cambia esta URL
+  wompiPublicKey: 'pub_stagtest_g2u0HQd3ZMh05hsSgTS2IUV8t3s4mOt7',
+  wompiApiUrl: 'https://api-sandbox.co.uat.wompi.dev/v1',
+}
+```
+
+**Opción 2: Variables de entorno (opcional)**
+
+Crea un archivo `.env` en la raíz del proyecto:
+```bash
+VITE_CHECKOUT_API_URL=http://localhost:3000
+VITE_WOMPI_PUBLIC_KEY=pub_stagtest_g2u0HQd3ZMh05hsSgTS2IUV8t3s4mOt7
+```
+
+> **Nota:** Actualmente las variables de entorno están comentadas en el código para compatibilidad con Jest. Si deseas usarlas, actualiza `src/config/api.ts` para leer de `import.meta.env`.
+
+### Endpoints Esperados
+
+El backend debe exponer los siguientes endpoints:
+
+- `POST /api/checkout` - Procesar pago
+- `GET /api/checkout/status/:wompiTransactionId` - Consultar estado de transacción
+- `GET /api/products` - Obtener listado de productos
+
+## 🛣️ Sistema de Rutas
+
+La aplicación utiliza **React Router v6** para navegación:
+
+| Ruta | Descripción |
+|------|-------------|
+| `/` | Redirige a `/products` |
+| `/products` | Listado de productos disponibles |
+| `/checkout` | Flujo de checkout (delivery + payment) |
+| `/checkout/summary` | Resumen final (Fase 3) |
+
+### Flujo de Usuario
+
+```
+1. ProductPage → Click "Comprar" → Añade al carrito + navega a Checkout
+2. CheckoutPage Step 1 → Completa formulario de envío
+3. CheckoutPage Step 2 → Ingresa tarjeta de crédito
+4. Summary Page → Revisar y confirmar (próximo)
+5. Status Page → Polling de transacción (próximo)
+```
+
+## 🎯 Fase 1 + 2 - Completadas
+
+### ✅ Fase 1 - Product Page
 
 1. **Estructura de carpetas** siguiendo las mejores prácticas de React
 2. **Redux Store configurado** con:
@@ -98,6 +167,48 @@ npm run build
    - 4 slices: auth, products, cart, checkout
 3. **ProductPage Component**:
    - Integración con Redux
+   - Listado de productos
+   - Información de stock y precios
+   - Botón de compra con navegación
+   - Diseño Mobile-First (SASS)
+4. **Pruebas TDD completas**:
+   - 20+ casos de prueba
+   - Configuración apuntando a >80% coverage
+   - Testing Library + Jest
+
+### ✅ Fase 2 - Checkout Flow
+
+1. **React Router v6** configurado:
+   - Navegación entre ProductPage y CheckoutPage
+   - Rutas protegidas (redirige si carrito vacío)
+   - Sistema escalable de rutas
+
+2. **CheckoutPage Component**:
+   - Step indicators visuales (Envío → Pago → Resumen)
+   - Cart summary sidebar con totales
+   - Navegación entre pasos
+   - Integración completa con Redux
+   - Diseño responsive Mobile-First
+
+3. **DeliveryForm Component**:
+   - 5 campos validados (nombre, dirección, ciudad, postal, teléfono)
+   - Validación en tiempo real
+   - Formatos específicos (postal numérico, teléfono 10 dígitos)
+   - Precarga de datos desde Redux
+   - 50+ casos de prueba TDD
+
+4. **CreditCardModal Component**:
+   - Detección automática VISA/MasterCard
+   - Formateo de número de tarjeta (espacios cada 4 dígitos)
+   - Validación de fecha de expiración (MM/YY)
+   - Validación de CVV (3-4 dígitos)
+   - Logos visuales según tipo de tarjeta
+   - Cierre con tecla Escape
+   - 80+ casos de prueba TDD
+
+5. **Algoritmo de Detección de Tarjetas**:
+   - VISA: Comienza con 4
+   - MasterCard: Rangos 51-55 o 2221-2720
    - Listado de productos
    - Información de stock y precios
    - Botón de compra
@@ -115,10 +226,12 @@ La aplicación espera que el backend esté corriendo en:
 http://localhost:3000
 ```
 
-### Endpoints utilizados (Fase 1)
+### Endpoints utilizados
 
 - `GET /api/products` - Obtener lista de productos
-- `POST /api/auth/login` - Autenticación (preparado para siguiente fase)
+- `POST /api/auth/login` - Autenticación
+- `POST /api/checkout` - Crear transacción (próximamente)
+- `GET /api/checkout/status/:id` - Verificar estado (próximamente)
 
 ## 📱 Diseño Responsive
 
@@ -151,13 +264,15 @@ La configuración de Jest está preparada para exigir:
 
 ## 🔄 Flujo de Negocio (5 Pasos)
 
-### Fase 1 ✅ - Product Page
+### ✅ Fase 1 - Product Page
 Muestra productos con stock y permite añadir al carrito.
 
+### ✅ Fase 2 - Credit Card / Delivery Info
+Formulario de envío + Modal de tarjeta de crédito con validación.
+
 ### Próximas fases:
-2. **Credit Card / Delivery Info** (Modal + Form)
-3. **Summary** (Backdrop con resumen de compra)
-4. **Final Status** (Polling de transacción)
+3. **Summary** (Backdrop con resumen de compra + fees)
+4. **Final Status** (Polling cada 5s hasta APPROVED/DECLINED)
 5. **Redirect** (Vuelta a productos con stock actualizado)
 
 ## 🔐 Persistencia
@@ -183,30 +298,53 @@ Esto garantiza que si el usuario recarga la página, no pierda su progreso.
 ```json
 {
   "react": "^18.2.0",
+  "react-router-dom": "^6.x",
   "react-redux": "^9.0.4",
   "@reduxjs/toolkit": "^2.0.1",
   "redux-persist": "^6.0.0",
-  "axios": "^1.6.2"
+  "axios": "^1.6.2",
+  "sass": "^1.69.5"
 }
 ```
 
 ## 📝 Notas de Desarrollo
 
-- El componente ProductPage hace dispatch de `fetchProducts()` al montar
-- Los productos sin stock muestran botón deshabilitado
-- Advertencia visual cuando el usuario no está autenticado
+### ProductPage
+- Hace dispatch de `fetchProducts()` al montar
+- Productos sin stock muestran botón deshabilitado
+- Click en "Comprar" añade al carrito y navega a `/checkout`
 - Manejo de estados: loading, error, success
-- Botón de reintentar en caso de error
+
+### CheckoutPage
+- Redirige a `/products` si el carrito está vacío
+- Step indicators muestran el progreso (Envío → Pago → Resumen)
+- Cart summary sidebar siempre visible con totales
+- Navegación back permitida entre pasos
+
+### DeliveryForm
+- Validación de campos requeridos
+- Formato postal (numérico + guiones)
+- Teléfono mínimo 10 dígitos numéricos
+- Nombre mínimo 3 caracteres
+- Errores se limpian al corregir el campo
+
+### CreditCardModal
+- Detecta VISA (inicia con 4) y MasterCard (51-55, 2221-2720)
+- Formatea número automáticamente (espacios cada 4 dígitos)
+- Valida fecha de expiración no vencida
+- CVV 3-4 dígitos
+- Cierra con Escape o botón cerrar
+- Datos NO se persisten en localStorage (seguridad)
 
 ## 🔜 Próximos Pasos
 
-Para continuar con la **Fase 2**, necesitaremos:
+Para continuar con la **Fase 3**, necesitaremos:
 
-1. Componente `Modal` para tarjeta de crédito
-2. Formulario de dirección de envío
-3. Validación de tarjeta (Algoritmo de Luhn)
-4. Detección visual del tipo de tarjeta (Visa/MasterCard)
-5. Navegación entre pasos
+1. Página de Summary con backdrop
+2. Mostrar desglose: Subtotal + Base Fee + Delivery Fee
+3. Botón de confirmar pago
+4. Integración con POST /api/checkout
+5. Tests TDD para SummaryPage
 
 ## 📄 Licencia
 
