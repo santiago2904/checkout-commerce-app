@@ -98,6 +98,42 @@ npm run test:coverage
 npm run build
 ```
 
+## ⚙️ Configuración del API
+
+La aplicación se conecta a un backend API para procesar pagos. La URL base del API está configurada en `src/config/api.ts`.
+
+### URL por Defecto
+
+Por defecto, la aplicación apunta a `http://localhost:3000`. Si tu backend API corre en una URL diferente:
+
+**Opción 1: Cambiar directamente en el código**
+```typescript
+// src/config/api.ts
+export const API_CONFIG = {
+  baseUrl: 'https://tu-api.com', // Cambia esta URL
+  wompiPublicKey: 'pub_stagtest_g2u0HQd3ZMh05hsSgTS2IUV8t3s4mOt7',
+  wompiApiUrl: 'https://api-sandbox.co.uat.wompi.dev/v1',
+}
+```
+
+**Opción 2: Variables de entorno (opcional)**
+
+Crea un archivo `.env` en la raíz del proyecto:
+```bash
+VITE_CHECKOUT_API_URL=http://localhost:3000
+VITE_WOMPI_PUBLIC_KEY=pub_stagtest_g2u0HQd3ZMh05hsSgTS2IUV8t3s4mOt7
+```
+
+> **Nota:** Actualmente las variables de entorno están comentadas en el código para compatibilidad con Jest. Si deseas usarlas, actualiza `src/config/api.ts` para leer de `import.meta.env`.
+
+### Endpoints Esperados
+
+El backend debe exponer los siguientes endpoints:
+
+- `POST /api/checkout` - Procesar pago
+- `GET /api/checkout/status/:wompiTransactionId` - Consultar estado de transacción
+- `GET /api/products` - Obtener listado de productos
+
 ## 🛣️ Sistema de Rutas
 
 La aplicación utiliza **React Router v6** para navegación:

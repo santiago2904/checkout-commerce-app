@@ -1,23 +1,37 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { removeFromCart, updateQuantity } from '@/features/cart/cartSlice'
+import {
+  removeFromCart,
+  updateQuantity,
+  checkTransactionStatus,
+  setPolling,
+} from '@/features/cart/cartSlice'
 import DeliveryForm from '@/components/DeliveryForm/DeliveryForm'
 import CreditCardModal from '@/components/CreditCardModal/CreditCardModal'
+import { PaymentSummaryBackdrop } from '@/components/PaymentSummaryBackdrop/PaymentSummaryBackdrop'
+import { FinalStatus } from '@/components/FinalStatus/FinalStatus'
 import Header from '@/components/Header/Header'
 import './CheckoutPage.scss'
 
-type CheckoutStep = 'delivery' | 'payment' | 'summary'
+type CheckoutStep = 'delivery' | 'payment' | 'summary' | 'status'
 
 const CheckoutPage = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { items, shippingAddress, paymentInfo } = useAppSelector(
-    (state) => state.cart
-  )
+  const {
+    items,
+    shippingAddress,
+    paymentInfo,
+    wompiTransactionId,
+    transactionStatus,
+    isPolling,
+  } = useAppSelector((state) => state.cart)
 
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('delivery')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showSummaryBackdrop, setShowSummaryBackdrop] = useState(false)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Redirigir si el carrito está vacío
   useEffect(() => {
@@ -34,6 +48,37 @@ const CheckoutPage = () => {
     }
   }, [shippingAddress, paymentInfo, currentStep])
 
+  // Polling for transaction status
+  useEffect(() => {
+    if (isPolling && wompiTransactionId) {
+      // Start polling every 5 seconds
+      pollingIntervalRef.current = setInterval(() => {
+        dispatch(checkTransactionStatus(wompiTransactionId))
+      }, 5000)
+
+      // Initial check
+      dispatch(checkTransactionStatus(wompiTransactionId))
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+    }
+  }, [isPolling, wompiTransactionId, dispatch])
+
+  // Stop polling when status is final
+  useEffect(() => {
+    if (transactionStatus === 'APPROVED' || transactionStatus === 'DECLINED') {
+      dispatch(setPolling(false))
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+    }
+  }, [transactionStatus, dispatch])
+
   // Calcular total del carrito
   const calculateTotal = () => {
     return items.reduce((total, item) => {
@@ -49,8 +94,22 @@ const CheckoutPage = () => {
   const handlePaymentComplete = () => {
     setShowPaymentModal(false)
     setCurrentStep('summary')
-    // Navegar a la página de resumen
-    navigate('/checkout/summary')
+    setShowSummaryBackdrop(true)
+  }
+
+  const handleCheckoutComplete = () => {
+    setShowSummaryBackdrop(false)
+    setCurrentStep('status')
+    // Start polling
+    if (wompiTransactionId) {
+      dispatch(setPolling(true))
+    }
+  }
+
+  const handleSummaryClose = () => {
+    setShowSummaryBackdrop(false)
+    setCurrentStep('payment')
+    setShowPaymentModal(true)
   }
 
   const handlePaymentClose = () => {
@@ -130,95 +189,117 @@ const CheckoutPage = () => {
       </div>
 
       <main className="checkout-page__content" role="main">
-        <div className="checkout-page__main">
-          {currentStep === 'delivery' && !showPaymentModal && (
-            <DeliveryForm onSubmit={handleDeliveryComplete} />
-          )}
+        {currentStep === 'status' ? (
+          <FinalStatus />
+        ) : (
+          <>
+            <div className="checkout-page__main">
+              {currentStep === 'delivery' && !showPaymentModal && (
+                <DeliveryForm onSubmit={handleDeliveryComplete} />
+              )}
 
-          {currentStep === 'payment' && showPaymentModal && (
-            <CreditCardModal
-              isOpen={showPaymentModal}
-              onClose={handlePaymentClose}
-              onSubmit={handlePaymentComplete}
-            />
-          )}
-        </div>
+              {currentStep === 'payment' && showPaymentModal && (
+                <CreditCardModal
+                  isOpen={showPaymentModal}
+                  onClose={handlePaymentClose}
+                  onSubmit={handlePaymentComplete}
+                />
+              )}
+            </div>
 
-        {/* Cart Summary Sidebar */}
-        <aside className="checkout-page__sidebar">
-          <div className="cart-summary">
-            <h2 className="cart-summary__title">Resumen del Pedido</h2>
+            {/* Cart Summary Sidebar */}
+            <aside className="checkout-page__sidebar">
+              <div className="cart-summary">
+                <h2 className="cart-summary__title">Resumen del Pedido</h2>
 
-            <div className="cart-summary__items">
-              {items.map((item, index) => (
-                <div key={`${item.product.id}-${index}`} className="cart-item">
-                  {item.product.imageUrl && (
-                    <img
-                      src={item.product.imageUrl}
-                      alt={item.product.name}
-                      className="cart-item__image"
-                    />
-                  )}
-                  <div className="cart-item__details">
-                    <div className="cart-item__header">
-                      <h3 className="cart-item__name">{item.product.name}</h3>
-                      <button
-                        className="cart-item__remove"
-                        onClick={() => handleRemoveItem(item.product.id)}
-                        aria-label={`Eliminar ${item.product.name}`}
-                        title="Eliminar del carrito"
-                      >
-                        ×
-                      </button>
+                <div className="cart-summary__items">
+                  {items.map((item, index) => (
+                    <div key={`${item.product.id}-${index}`} className="cart-item">
+                      {item.product.imageUrl && (
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="cart-item__image"
+                        />
+                      )}
+                      <div className="cart-item__details">
+                        <div className="cart-item__header">
+                          <h3 className="cart-item__name">{item.product.name}</h3>
+                          <button
+                            className="cart-item__remove"
+                            onClick={() => handleRemoveItem(item.product.id)}
+                            aria-label={`Eliminar ${item.product.name}`}
+                            title="Eliminar del carrito"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="cart-item__quantity-control">
+                          <button
+                            className="quantity-btn"
+                            onClick={() => handleDecrement(item.product.id, item.quantity)}
+                            aria-label="Disminuir cantidad"
+                          >
+                            −
+                          </button>
+                          <span className="quantity-value">{item.quantity}</span>
+                          <button
+                            className="quantity-btn"
+                            onClick={() => handleIncrement(item.product.id, item.quantity)}
+                            aria-label="Aumentar cantidad"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="cart-item__price">
+                          ${(item.product.price * item.quantity).toLocaleString('es-CO')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="cart-item__quantity-control">
-                      <button
-                        className="quantity-btn"
-                        onClick={() => handleDecrement(item.product.id, item.quantity)}
-                        aria-label="Disminuir cantidad"
-                      >
-                        −
-                      </button>
-                      <span className="quantity-value">{item.quantity}</span>
-                      <button
-                        className="quantity-btn"
-                        onClick={() => handleIncrement(item.product.id, item.quantity)}
-                        aria-label="Aumentar cantidad"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <p className="cart-item__price">
-                      ${(item.product.price * item.quantity).toLocaleString('es-CO')}
-                    </p>
+                  ))}
+                </div>
+
+                <div className="cart-summary__total">
+                  <div className="total-row">
+                    <span>Subtotal (sin IVA):</span>
+                    <span>${Math.round(total / 1.19).toLocaleString('es-CO')}</span>
+                  </div>
+                  <div className="total-row">
+                    <span>IVA (19%):</span>
+                    <span>${Math.round(total - total / 1.19).toLocaleString('es-CO')}</span>
+                  </div>
+                  <div className="total-row">
+                    <span>Envío:</span>
+                    <span className="free-shipping">Gratis</span>
+                  </div>
+                  <div className="total-row total-row--grand">
+                    <span>Total:</span>
+                    <span>${total.toLocaleString('es-CO')}</span>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            <div className="cart-summary__total">
-              <div className="total-row">
-                <span>Subtotal:</span>
-                <span>${total.toLocaleString('es-CO')}</span>
+                {/* Status indicators */}
+                <div className="cart-summary__status">
+                  <div className={`status-item ${shippingAddress ? 'complete' : ''}`}>
+                    {shippingAddress ? '✓' : '○'} Dirección de envío
+                  </div>
+                  <div className={`status-item ${paymentInfo ? 'complete' : ''}`}>
+                    {paymentInfo ? '✓' : '○'} Información de pago
+                  </div>
+                </div>
               </div>
-              <div className="total-row total-row--grand">
-                <span>Total:</span>
-                <span>${total.toLocaleString('es-CO')}</span>
-              </div>
-            </div>
-
-            {/* Status indicators */}
-            <div className="cart-summary__status">
-              <div className={`status-item ${shippingAddress ? 'complete' : ''}`}>
-                {shippingAddress ? '✓' : '○'} Dirección de envío
-              </div>
-              <div className={`status-item ${paymentInfo ? 'complete' : ''}`}>
-                {paymentInfo ? '✓' : '○'} Información de pago
-              </div>
-            </div>
-          </div>
-        </aside>
+            </aside>
+          </>
+        )}
       </main>
+
+      {/* Payment Summary Backdrop */}
+      {showSummaryBackdrop && (
+        <PaymentSummaryBackdrop
+          onClose={handleSummaryClose}
+          onCheckoutComplete={handleCheckoutComplete}
+        />
+      )}
     </div>
     </>
   )

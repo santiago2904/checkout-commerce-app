@@ -1,0 +1,136 @@
+@use '@/styles/variables' as *;
+
+.final-status {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+
+  .status-card {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+
+    .status-icon {
+      margin: 0 auto 1.5rem;
+      width: 64px;
+      height: 64px;
+
+      &.success svg circle {
+        fill: #28a745;
+      }
+
+      &.error svg circle {
+        fill: #dc3545;
+      }
+
+      &.pending svg circle {
+        fill: #ffc107;
+      }
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 1rem 0;
+      color: $text-color;
+
+      @media (max-width: $breakpoint-mobile) {
+        font-size: 1.75rem;
+      }
+    }
+
+    .status-message {
+      font-size: 1.125rem;
+      color: $gray;
+      margin: 0 0 1rem 0;
+    }
+
+    .transaction-id {
+      font-size: 0.9375rem;
+      color: $gray;
+      margin: 0.5rem 0 1rem 0;
+      padding: 0.75rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+
+      strong {
+        color: $text-color;
+        font-family: monospace;
+      }
+    }
+
+    .error-detail {
+      color: #dc3545;
+      font-size: 0.9375rem;
+      margin: 0.5rem 0 1rem 0;
+      padding: 0.75rem;
+      background-color: #f8d7da;
+      border-radius: 8px;
+    }
+
+    .info-text {
+      font-size: 0.9375rem;
+      color: $gray;
+      margin: 0 0 2rem 0;
+      line-height: 1.6;
+    }
+
+    .loader {
+      margin: 2rem auto;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid $primary-color;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .return-button {
+      background-color: $primary-color;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 300px;
+
+      &:hover {
+        background-color: darken($primary-color, 10%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+// Tablet and Desktop
+@media (min-width: $breakpoint-tablet) {
+  .final-status {
+    .status-card {
+      padding: 4rem 3rem;
+    }
+  }
+}

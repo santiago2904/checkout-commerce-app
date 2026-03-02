@@ -1,9 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import axios from 'axios'
-import { CheckoutState, CheckoutRequest, CheckoutResponse, TransactionStatus } from '@/types'
+import { CheckoutState, CheckoutRequest, CheckoutData, TransactionStatusData } from '@/types'
 import { RootState } from '@/store/store'
-
-const API_BASE_URL = 'http://localhost:3000/api'
+import API_CONFIG from '@/config/api'
 
 // Interface para la respuesta de la API
 interface ApiResponse<T> {
@@ -12,15 +11,19 @@ interface ApiResponse<T> {
 }
 
 // Async thunk para crear checkout
-export const createCheckout = createAsyncThunk(
+export const createCheckout = createAsyncThunk<
+  CheckoutData,
+  CheckoutRequest,
+  { state: RootState; rejectValue: string }
+>(
   'checkout/create',
   async (checkoutData: CheckoutRequest, { getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState
       const token = state.auth.token
 
-      const response = await axios.post<ApiResponse<CheckoutResponse>>(
-        `${API_BASE_URL}/checkout`,
+      const response = await axios.post<ApiResponse<CheckoutData>>(
+        `${API_CONFIG.baseUrl}/api/checkout`,
         checkoutData,
         {
           headers: {
@@ -38,15 +41,19 @@ export const createCheckout = createAsyncThunk(
 )
 
 // Async thunk para verificar el estado de la transacción
-export const checkTransactionStatus = createAsyncThunk(
+export const checkTransactionStatus = createAsyncThunk<
+  TransactionStatusData,
+  string,
+  { state: RootState; rejectValue: string }
+>(
   'checkout/checkStatus',
   async (transactionId: string, { getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState
       const token = state.auth.token
 
-      const response = await axios.get<ApiResponse<TransactionStatus>>(
-        `${API_BASE_URL}/checkout/status/${transactionId}`,
+      const response = await axios.get<ApiResponse<TransactionStatusData>>(
+        `${API_CONFIG.baseUrl}/api/checkout/status/${transactionId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -85,7 +92,7 @@ const checkoutSlice = createSlice({
         state.loading = true
         state.error = null
       })
-      .addCase(createCheckout.fulfilled, (state, action: PayloadAction<CheckoutResponse>) => {
+      .addCase(createCheckout.fulfilled, (state, action: PayloadAction<CheckoutData>) => {
         state.loading = false
         state.transaction = action.payload
         state.error = null
@@ -99,7 +106,7 @@ const checkoutSlice = createSlice({
         state.error = action.payload as string
       })
       // Check status
-      .addCase(checkTransactionStatus.fulfilled, (state, action: PayloadAction<TransactionStatus>) => {
+      .addCase(checkTransactionStatus.fulfilled, (state, action: PayloadAction<TransactionStatusData>) => {
         if (state.transaction) {
           state.transaction.status = action.payload.status
           // Desactivar polling si el estado ya no es PENDING

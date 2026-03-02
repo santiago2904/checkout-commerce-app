@@ -4,6 +4,7 @@ export default {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
   moduleNameMapper: {
+    '^@/config/api$': '<rootDir>/src/config/__mocks__/api.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },

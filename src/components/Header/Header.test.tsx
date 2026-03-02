@@ -26,6 +26,8 @@ const createMockStore = (initialState = {}) => {
     preloadedState: {
       auth: {
         token: null,
+        user: null,
+        customer: null,
         isAuthenticated: false,
         loading: false,
         error: null,
@@ -39,6 +41,15 @@ const createMockStore = (initialState = {}) => {
         items: [],
         shippingAddress: null,
         paymentInfo: null,
+        customerEmail: null,
+        acceptanceToken: null,
+        acceptancePermalink: null,
+        transactionId: null,
+        wompiTransactionId: null,
+        transactionStatus: null,
+        checkoutLoading: false,
+        checkoutError: null,
+        isPolling: false,
       },
       checkout: {
         transaction: null,
@@ -236,15 +247,14 @@ describe('Header', () => {
       expect(mockNavigate).not.toHaveBeenCalled()
     })
 
-    it('should call onLoginClick when provided', () => {
-      const mockLoginClick = jest.fn()
+    it('should navigate to login page when clicking login button', () => {
       const store = createMockStore()
-      renderWithProviders(<Header onLoginClick={mockLoginClick} />, store)
+      renderWithProviders(<Header />, store)
 
       const loginButton = screen.getByText('Iniciar sesión')
       fireEvent.click(loginButton)
 
-      expect(mockLoginClick).toHaveBeenCalled()
+      expect(mockNavigate).toHaveBeenCalledWith('/login')
     })
   })
 

@@ -24,9 +24,22 @@ jest.mock('@/features/products/productsSlice', () => ({
 const createMockStore = (initialState = {}) => {
   // Estado base por defecto
   const defaultState = {
-    auth: { token: null, isAuthenticated: false, loading: false, error: null },
+    auth: { token: null, user: null, customer: null, isAuthenticated: false, loading: false, error: null },
     products: { items: [], loading: false, error: null },
-    cart: { items: [], shippingAddress: null, paymentInfo: null },
+    cart: {
+      items: [],
+      shippingAddress: null,
+      paymentInfo: null,
+      customerEmail: null,
+      acceptanceToken: null,
+      acceptancePermalink: null,
+      transactionId: null,
+      wompiTransactionId: null,
+      transactionStatus: null,
+      checkoutLoading: false,
+      checkoutError: null,
+      isPolling: false,
+    },
     checkout: { transaction: null, loading: false, error: null, pollingActive: false },
   }
   
@@ -194,11 +207,15 @@ describe('CheckoutPage', () => {
           ],
           shippingAddress: null,
           paymentInfo: null,
+          customerEmail: null,
         },
       })
       renderWithProviders(<CheckoutPage />, store)
 
       // Fill delivery form
+      fireEvent.change(screen.getByLabelText(/email/i), {
+        target: { value: 'test@test.com' },
+      })
       fireEvent.change(screen.getByLabelText(/nombre completo/i), {
         target: { value: 'Juan Pérez' },
       })
@@ -208,11 +225,11 @@ describe('CheckoutPage', () => {
       fireEvent.change(screen.getByLabelText(/ciudad/i), {
         target: { value: 'Bogotá' },
       })
-      fireEvent.change(screen.getByLabelText(/código postal/i), {
-        target: { value: '110111' },
+      fireEvent.change(screen.getByLabelText(/departamento|región/i), {
+        target: { value: 'Cundinamarca' },
       })
       fireEvent.change(screen.getByLabelText(/teléfono/i), {
-        target: { value: '3001234567' },
+        target: { value: '+573001234567' },
       })
 
       // Submit delivery form
@@ -234,6 +251,7 @@ describe('CheckoutPage', () => {
           ],
           shippingAddress: null,
           paymentInfo: null,
+          customerEmail: null,
         },
       })
       renderWithProviders(<CheckoutPage />, store)
@@ -242,6 +260,9 @@ describe('CheckoutPage', () => {
       expect(screen.getByLabelText(/nombre completo/i)).toBeInTheDocument()
 
       // Fill and submit delivery form to go to payment
+      const emailInput = screen.getByLabelText(/email/i)
+      fireEvent.change(emailInput, { target: { value: 'test@test.com' } })
+      
       const nameInput = screen.getByLabelText(/nombre completo/i)
       fireEvent.change(nameInput, { target: { value: 'Test User' } })
       
@@ -251,11 +272,11 @@ describe('CheckoutPage', () => {
       const cityInput = screen.getByLabelText(/ciudad/i)
       fireEvent.change(cityInput, { target: { value: 'Bogotá' } })
       
-      const postalInput = screen.getByLabelText(/código postal/i)
-      fireEvent.change(postalInput, { target: { value: '110111' } })
+      const regionInput = screen.getByLabelText(/departamento|región/i)
+      fireEvent.change(regionInput, { target: { value: 'Cundinamarca' } })
       
       const phoneInput = screen.getByLabelText(/teléfono/i)
-      fireEvent.change(phoneInput, { target: { value: '3001234567' } })
+      fireEvent.change(phoneInput, { target: { value: '+573001234567' } })
 
       const continueButton = screen.getByRole('button', { name: /continuar/i })
       fireEvent.click(continueButton)

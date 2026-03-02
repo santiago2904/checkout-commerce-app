@@ -10,11 +10,12 @@ export interface Product {
 }
 
 export interface ShippingAddress {
-  fullName: string
-  address: string
+  addressLine1: string
   city: string
-  postalCode: string
-  phone: string
+  region: string
+  country: string
+  recipientName: string
+  recipientPhone: string
 }
 
 export interface CreditCard {
@@ -31,33 +32,129 @@ export interface CartItem {
 }
 
 export interface CheckoutRequest {
-  productId: string
-  quantity: number
-  shippingAddress: ShippingAddress
-  paymentInfo: {
-    cardNumber: string
-    cardHolder: string
-    expiryDate: string
-    cvv: string
+  acceptanceToken: string
+  items: Array<{ productId: string; quantity: number }>
+  paymentMethod: {
+    type: 'CARD'
+    cardData: {
+      number: string
+      cvc: string
+      exp_month: string
+      exp_year: string
+      card_holder: string
+    }
+    installments: number
   }
+  shippingAddress: ShippingAddress
+  customerEmail: string
 }
 
 export interface CheckoutResponse {
-  transactionId: string
-  status: 'PENDING' | 'APPROVED' | 'DECLINED'
-  amount: number
-  timestamp: string
+  statusCode: number
+  message: string
+  data: {
+    transactionId: string
+    status: 'PENDING' | 'APPROVED' | 'DECLINED'
+    amount: number
+    currency: string
+    reference: string
+    paymentMethod: string
+    wompiTransactionId: string
+    errorMessage: string | null
+  }
 }
 
 export interface TransactionStatus {
-  transactionId: string
-  status: 'PENDING' | 'APPROVED' | 'DECLINED'
-  amount: number
-  timestamp: string
+  statusCode: number
+  message: string
+  data: {
+    transactionId: string
+    wompiTransactionId: string
+    status: 'PENDING' | 'APPROVED' | 'DECLINED'
+    amount: number
+    reference: string
+    paymentMethod: string
+    errorMessage: string | null
+    redirectUrl: string
+    statusMessage: string | null
+    merchant: {
+      id: number
+      name: string
+      legal_name: string
+      contact_name: string
+      phone_number: string
+      logo_url: string | null
+      legal_id_type: string
+      email: string
+      legal_id: string
+      public_key: string
+    }
+  }
+}
+
+// Types for data returned by async thunks (without API wrapper)
+export type CheckoutData = CheckoutResponse['data']
+export type TransactionStatusData = TransactionStatus['data']
+
+export interface WompiAcceptanceResponse {
+  data: {
+    presigned_acceptance: {
+      acceptance_token: string
+      permalink: string
+      type: string
+    }
+  }
+}
+
+// Auth Types
+export interface User {
+  id: string
+  email: string
+  roleId: string
+  roleName: string
+}
+
+export interface Customer {
+  id: string
+  firstName: string
+  lastName: string
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface RegisterRequest {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+}
+
+export interface LoginResponse {
+  statusCode: number
+  message: string
+  data: {
+    user: User
+    accessToken: string
+  }
+}
+
+export interface RegisterResponse {
+  statusCode: number
+  message: string
+  data: {
+    user: User
+    customer: Customer
+    accessToken: string
+  }
 }
 
 export interface AuthState {
   token: string | null
+  user: User | null
+  customer: Customer | null
   isAuthenticated: boolean
   loading: boolean
   error: string | null
@@ -73,10 +170,19 @@ export interface CartState {
   items: CartItem[]
   shippingAddress: ShippingAddress | null
   paymentInfo: CreditCard | null
+  customerEmail: string | null
+  acceptanceToken: string | null
+  acceptancePermalink: string | null
+  transactionId: string | null
+  wompiTransactionId: string | null
+  transactionStatus: 'PENDING' | 'APPROVED' | 'DECLINED' | null
+  checkoutLoading: boolean
+  checkoutError: string | null
+  isPolling: boolean
 }
 
 export interface CheckoutState {
-  transaction: CheckoutResponse | null
+  transaction: CheckoutData | null
   loading: boolean
   error: string | null
   pollingActive: boolean

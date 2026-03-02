@@ -1,14 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { useAppSelector } from '@/store/hooks'
+import { useAppSelector, useAppDispatch } from '@/store/hooks'
+import { logout } from '@/features/auth/authSlice'
 import './Header.scss'
 
-interface HeaderProps {
-  onLoginClick?: () => void
-}
-
-const Header = ({ onLoginClick }: HeaderProps) => {
+const Header = () => {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAppSelector((state) => state.auth)
+  const dispatch = useAppDispatch()
+  const { isAuthenticated, user, customer } = useAppSelector((state) => state.auth)
   const { items } = useAppSelector((state) => state.cart)
 
   const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0)
@@ -24,18 +22,21 @@ const Header = ({ onLoginClick }: HeaderProps) => {
   }
 
   const handleLoginClick = () => {
-    if (onLoginClick) {
-      onLoginClick()
-    } else {
-      // Navegar a una página de login (por implementar)
-      console.log('Login clicked')
-    }
+    navigate('/login')
   }
 
-  // Decodificar token para obtener nombre de usuario (simplificado)
+  const handleLogout = () => {
+    dispatch(logout())
+    navigate('/products')
+  }
+
   const getUserName = () => {
-    // Por ahora retornamos un nombre genérico
-    // En producción, decodificaríamos el JWT token
+    if (customer) {
+      return `${customer.firstName} ${customer.lastName}`
+    }
+    if (user) {
+      return user.email.split('@')[0]
+    }
     return 'Usuario'
   }
 
@@ -71,9 +72,18 @@ const Header = ({ onLoginClick }: HeaderProps) => {
 
           {/* Login/Usuario */}
           {isAuthenticated ? (
-            <div className="app-header__user" aria-label="Usuario autenticado">
-              <span className="user-icon">👤</span>
-              <span className="user-name">{getUserName()}</span>
+            <div className="app-header__user-section">
+              <div className="app-header__user" aria-label="Usuario autenticado">
+                <span className="user-icon">👤</span>
+                <span className="user-name">{getUserName()}</span>
+              </div>
+              <button
+                className="app-header__logout-btn"
+                onClick={handleLogout}
+                aria-label="Cerrar sesión"
+              >
+                Salir
+              </button>
             </div>
           ) : (
             <button

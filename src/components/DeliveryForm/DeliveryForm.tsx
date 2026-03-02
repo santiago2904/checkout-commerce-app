@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { setShippingAddress } from '@/features/cart/cartSlice'
+import { setShippingAddress, setCustomerEmail } from '@/features/cart/cartSlice'
 import { ShippingAddress } from '@/types'
 import './DeliveryForm.scss'
 
@@ -9,39 +9,48 @@ interface DeliveryFormProps {
 }
 
 interface ValidationErrors {
-  fullName?: string
-  address?: string
+  recipientName?: string
+  addressLine1?: string
   city?: string
-  postalCode?: string
-  phone?: string
+  region?: string
+  country?: string
+  recipientPhone?: string
+  email?: string
 }
 
 const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
   const dispatch = useAppDispatch()
   const existingAddress = useAppSelector((state) => state.cart.shippingAddress)
+  const existingEmail = useAppSelector((state) => state.cart.customerEmail)
 
-  const [fullName, setFullName] = useState('')
-  const [address, setAddress] = useState('')
+  const [recipientName, setRecipientName] = useState('')
+  const [addressLine1, setAddressLine1] = useState('')
   const [city, setCity] = useState('')
-  const [postalCode, setPostalCode] = useState('')
-  const [phone, setPhone] = useState('')
+  const [region, setRegion] = useState('')
+  const [country, setCountry] = useState('Colombia')
+  const [recipientPhone, setRecipientPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [errors, setErrors] = useState<ValidationErrors>({})
 
   // Precargar datos si existen
   useEffect(() => {
     if (existingAddress) {
-      setFullName(existingAddress.fullName)
-      setAddress(existingAddress.address)
+      setRecipientName(existingAddress.recipientName)
+      setAddressLine1(existingAddress.addressLine1)
       setCity(existingAddress.city)
-      setPostalCode(existingAddress.postalCode)
-      setPhone(existingAddress.phone)
+      setRegion(existingAddress.region)
+      setCountry(existingAddress.country)
+      setRecipientPhone(existingAddress.recipientPhone)
     }
-  }, [existingAddress])
+    if (existingEmail) {
+      setEmail(existingEmail)
+    }
+  }, [existingAddress, existingEmail])
 
-  // Validar nombre completo
-  const validateFullName = (value: string): string | undefined => {
+  // Validar nombre del destinatario
+  const validateRecipientName = (value: string): string | undefined => {
     if (!value.trim()) {
-      return 'El nombre completo es requerido'
+      return 'El nombre del destinatario es requerido'
     }
     if (value.trim().length < 3) {
       return 'El nombre debe tener al menos 3 caracteres'
@@ -50,7 +59,7 @@ const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
   }
 
   // Validar dirección
-  const validateAddress = (value: string): string | undefined => {
+  const validateAddressLine1 = (value: string): string | undefined => {
     if (!value.trim()) {
       return 'La dirección es requerida'
     }
@@ -65,52 +74,64 @@ const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
     return undefined
   }
 
-  // Validar código postal
-  const validatePostalCode = (value: string): string | undefined => {
+  // Validar región/departamento
+  const validateRegion = (value: string): string | undefined => {
     if (!value.trim()) {
-      return 'El código postal es requerido'
+      return 'La región/departamento es requerida'
     }
-    // Solo números y guiones
-    if (!/^[0-9-]+$/.test(value)) {
-      return 'Código postal inválido'
+    return undefined
+  }
+
+  // Validar país
+  const validateCountry = (value: string): string | undefined => {
+    if (!value.trim()) {
+      return 'El país es requerido'
     }
     return undefined
   }
 
   // Validar teléfono
-  const validatePhone = (value: string): string | undefined => {
+  const validateRecipientPhone = (value: string): string | undefined => {
     if (!value.trim()) {
       return 'El teléfono es requerido'
     }
-    // Solo números
-    if (!/^[0-9]+$/.test(value)) {
-      return 'El teléfono debe contener solo números'
+    // Formato colombiano con +57
+    if (!/^\+57[0-9]{10}$/.test(value)) {
+      return 'El teléfono debe tener el formato +573001234567'
     }
-    if (value.length < 10) {
-      return 'El teléfono debe tener al menos 10 dígitos'
+    return undefined
+  }
+
+  // Validar email
+  const validateEmail = (value: string): string | undefined => {
+    if (!value.trim()) {
+      return 'El email es requerido'
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      return 'Email inválido'
     }
     return undefined
   }
 
   // Handlers con validación en tiempo real
-  const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRecipientNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setFullName(value)
-    if (errors.fullName) {
-      const error = validateFullName(value)
+    setRecipientName(value)
+    if (errors.recipientName) {
+      const error = validateRecipientName(value)
       if (!error) {
-        setErrors({ ...errors, fullName: undefined })
+        setErrors({ ...errors, recipientName: undefined })
       }
     }
   }
 
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddressLine1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setAddress(value)
-    if (errors.address) {
-      const error = validateAddress(value)
+    setAddressLine1(value)
+    if (errors.addressLine1) {
+      const error = validateAddressLine1(value)
       if (!error) {
-        setErrors({ ...errors, address: undefined })
+        setErrors({ ...errors, addressLine1: undefined })
       }
     }
   }
@@ -126,24 +147,46 @@ const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
     }
   }
 
-  const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRegionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setPostalCode(value)
-    if (errors.postalCode) {
-      const error = validatePostalCode(value)
+    setRegion(value)
+    if (errors.region) {
+      const error = validateRegion(value)
       if (!error) {
-        setErrors({ ...errors, postalCode: undefined })
+        setErrors({ ...errors, region: undefined })
       }
     }
   }
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCountryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setPhone(value)
-    if (errors.phone) {
-      const error = validatePhone(value)
+    setCountry(value)
+    if (errors.country) {
+      const error = validateCountry(value)
       if (!error) {
-        setErrors({ ...errors, phone: undefined })
+        setErrors({ ...errors, country: undefined })
+      }
+    }
+  }
+
+  const handleRecipientPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setRecipientPhone(value)
+    if (errors.recipientPhone) {
+      const error = validateRecipientPhone(value)
+      if (!error) {
+        setErrors({ ...errors, recipientPhone: undefined })
+      }
+    }
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEmail(value)
+    if (errors.email) {
+      const error = validateEmail(value)
+      if (!error) {
+        setErrors({ ...errors, email: undefined })
       }
     }
   }
@@ -152,20 +195,26 @@ const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {}
 
-    const fullNameError = validateFullName(fullName)
-    if (fullNameError) newErrors.fullName = fullNameError
+    const recipientNameError = validateRecipientName(recipientName)
+    if (recipientNameError) newErrors.recipientName = recipientNameError
 
-    const addressError = validateAddress(address)
-    if (addressError) newErrors.address = addressError
+    const addressLine1Error = validateAddressLine1(addressLine1)
+    if (addressLine1Error) newErrors.addressLine1 = addressLine1Error
 
     const cityError = validateCity(city)
     if (cityError) newErrors.city = cityError
 
-    const postalCodeError = validatePostalCode(postalCode)
-    if (postalCodeError) newErrors.postalCode = postalCodeError
+    const regionError = validateRegion(region)
+    if (regionError) newErrors.region = regionError
 
-    const phoneError = validatePhone(phone)
-    if (phoneError) newErrors.phone = phoneError
+    const countryError = validateCountry(country)
+    if (countryError) newErrors.country = countryError
+
+    const recipientPhoneError = validateRecipientPhone(recipientPhone)
+    if (recipientPhoneError) newErrors.recipientPhone = recipientPhoneError
+
+    const emailError = validateEmail(email)
+    if (emailError) newErrors.email = emailError
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -181,14 +230,16 @@ const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
 
     // Guardar en Redux
     const shippingData: ShippingAddress = {
-      fullName: fullName.trim(),
-      address: address.trim(),
+      recipientName: recipientName.trim(),
+      addressLine1: addressLine1.trim(),
       city: city.trim(),
-      postalCode: postalCode.trim(),
-      phone: phone.trim(),
+      region: region.trim(),
+      country: country.trim(),
+      recipientPhone: recipientPhone.trim(),
     }
 
     dispatch(setShippingAddress(shippingData))
+    dispatch(setCustomerEmail(email.trim()))
     onSubmit()
   }
 
@@ -202,103 +253,143 @@ const DeliveryForm = ({ onSubmit }: DeliveryFormProps) => {
       </div>
 
       <div className="delivery-form__content">
-        {/* Nombre completo */}
+        {/* Email */}
         <div className="form-group">
-          <label htmlFor="fullName">
+          <label htmlFor="email">
+            Email *
+          </label>
+          <input
+            id="email"
+            type="text"
+            value={email}
+            onChange={handleEmailChange}
+            placeholder="customer@test.com"
+            className={errors.email ? 'error' : ''}
+          />
+          {errors.email && (
+            <span className="error-message" role="alert">
+              {errors.email}
+            </span>
+          )}
+        </div>
+
+        {/* Nombre del destinatario */}
+        <div className="form-group">
+          <label htmlFor="recipientName">
             Nombre Completo del Destinatario *
           </label>
           <input
-            id="fullName"
+            id="recipientName"
             type="text"
-            value={fullName}
-            onChange={handleFullNameChange}
-            placeholder="Juan Pérez García"
-            className={errors.fullName ? 'error' : ''}
+            value={recipientName}
+            onChange={handleRecipientNameChange}
+            placeholder="Juan Pérez"
+            className={errors.recipientName ? 'error' : ''}
           />
-          {errors.fullName && (
+          {errors.recipientName && (
             <span className="error-message" role="alert">
-              {errors.fullName}
+              {errors.recipientName}
             </span>
           )}
         </div>
 
         {/* Dirección */}
         <div className="form-group">
-          <label htmlFor="address">
+          <label htmlFor="addressLine1">
             Dirección de Envío *
           </label>
           <input
-            id="address"
+            id="addressLine1"
             type="text"
-            value={address}
-            onChange={handleAddressChange}
-            placeholder="Calle 123 #45-67 Apto 401"
-            className={errors.address ? 'error' : ''}
+            value={addressLine1}
+            onChange={handleAddressLine1Change}
+            placeholder="Calle 123 #45-67"
+            className={errors.addressLine1 ? 'error' : ''}
           />
-          {errors.address && (
+          {errors.addressLine1 && (
             <span className="error-message" role="alert">
-              {errors.address}
+              {errors.addressLine1}
             </span>
           )}
         </div>
 
-        {/* Ciudad */}
-        <div className="form-group">
-          <label htmlFor="city">
-            Ciudad *
-          </label>
-          <input
-            id="city"
-            type="text"
-            value={city}
-            onChange={handleCityChange}
-            placeholder="Bogotá"
-            className={errors.city ? 'error' : ''}
-          />
-          {errors.city && (
-            <span className="error-message" role="alert">
-              {errors.city}
-            </span>
-          )}
-        </div>
-
+        {/* Ciudad y Región */}
         <div className="form-row">
-          {/* Código postal */}
           <div className="form-group">
-            <label htmlFor="postalCode">
-              Código Postal *
+            <label htmlFor="city">
+              Ciudad *
             </label>
             <input
-              id="postalCode"
+              id="city"
               type="text"
-              value={postalCode}
-              onChange={handlePostalCodeChange}
-              placeholder="110111"
-              className={errors.postalCode ? 'error' : ''}
+              value={city}
+              onChange={handleCityChange}
+              placeholder="Bogotá"
+              className={errors.city ? 'error' : ''}
             />
-            {errors.postalCode && (
+            {errors.city && (
               <span className="error-message" role="alert">
-                {errors.postalCode}
+                {errors.city}
               </span>
             )}
           </div>
 
-          {/* Teléfono */}
           <div className="form-group">
-            <label htmlFor="phone">
+            <label htmlFor="region">
+              Departamento *
+            </label>
+            <input
+              id="region"
+              type="text"
+              value={region}
+              onChange={handleRegionChange}
+              placeholder="Cundinamarca"
+              className={errors.region ? 'error' : ''}
+            />
+            {errors.region && (
+              <span className="error-message" role="alert">
+                {errors.region}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* País y Teléfono */}
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="country">
+              País *
+            </label>
+            <input
+              id="country"
+              type="text"
+              value={country}
+              onChange={handleCountryChange}
+              placeholder="Colombia"
+              className={errors.country ? 'error' : ''}
+            />
+            {errors.country && (
+              <span className="error-message" role="alert">
+                {errors.country}
+              </span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="recipientPhone">
               Teléfono *
             </label>
             <input
-              id="phone"
+              id="recipientPhone"
               type="tel"
-              value={phone}
-              onChange={handlePhoneChange}
-              placeholder="3001234567"
-              className={errors.phone ? 'error' : ''}
+              value={recipientPhone}
+              onChange={handleRecipientPhoneChange}
+              placeholder="+573001234567"
+              className={errors.recipientPhone ? 'error' : ''}
             />
-            {errors.phone && (
+            {errors.recipientPhone && (
               <span className="error-message" role="alert">
-                {errors.phone}
+                {errors.recipientPhone}
               </span>
             )}
           </div>
