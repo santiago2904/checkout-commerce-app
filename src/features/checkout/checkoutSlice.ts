@@ -52,11 +52,8 @@ export const checkTransactionStatus = createAsyncThunk<
       const state = getState() as RootState
       const token = state.auth.token
 
-      // Add timestamp for cache busting to prevent CloudFront caching
-      const cacheBuster = Date.now()
-      
       const response = await axios.get<ApiResponse<TransactionStatusData>>(
-        `${API_CONFIG.baseUrl}/api/checkout/status/${transactionId}?_t=${cacheBuster}`,
+        `${API_CONFIG.baseUrl}/api/checkout/status/${transactionId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

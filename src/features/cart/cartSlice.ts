@@ -95,11 +95,8 @@ export const checkTransactionStatus = createAsyncThunk(
       const state = getState() as RootState
       const token = state.auth.token
 
-      // Add timestamp for cache busting to prevent CloudFront caching
-      const cacheBuster = Date.now()
-      
       const response = await fetch(
-        `${API_CONFIG.baseUrl}/api/checkout/status?token=${statusToken}&_t=${cacheBuster}`,
+        `${API_CONFIG.baseUrl}/api/checkout/status?token=${statusToken}`,
         {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
@@ -136,11 +133,8 @@ export const fetchMyTransactions = createAsyncThunk(
         throw new Error('Authentication required')
       }
 
-      // Add timestamp for cache busting to prevent CloudFront caching
-      const cacheBuster = Date.now()
-
       const response = await fetch(
-        `${API_CONFIG.baseUrl}/api/checkout/me/transactions?_t=${cacheBuster}`,
+        `${API_CONFIG.baseUrl}/api/checkout/me/transactions`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
