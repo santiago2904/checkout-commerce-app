@@ -2,8 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import axios from 'axios'
 import { Product, ProductsState } from '@/types'
 import { RootState } from '@/store/store'
-
-const API_BASE_URL = 'http://localhost:3000/api'
+import API_CONFIG from '@/config/api'
 
 // Interface para la respuesta de la API
 interface ApiResponse<T> {
@@ -19,7 +18,7 @@ export const fetchProducts = createAsyncThunk(
       const state = getState() as RootState
       const token = state.auth.token
 
-      const response = await axios.get<ApiResponse<Product[]>>(`${API_BASE_URL}/products`, {
+      const response = await axios.get<ApiResponse<Product[]>>(`${API_CONFIG.baseUrl}/api/products`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       // La API devuelve { statusCode: 200, data: [...] }
