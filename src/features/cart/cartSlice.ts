@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import API_CONFIG from '@/config/api'
+import type { RootState } from '@/store/store'
 import {
   CartState,
   Product,
@@ -20,6 +21,7 @@ const initialState: CartState = {
   acceptancePermalink: null,
   transactionId: null,
   wompiTransactionId: null,
+  statusToken: null,
   transactionStatus: null,
   checkoutLoading: false,
   checkoutError: null,
@@ -54,12 +56,16 @@ export const fetchAcceptanceToken = createAsyncThunk(
 
 export const submitCheckout = createAsyncThunk(
   'cart/submitCheckout',
-  async (checkoutData: CheckoutRequest, { rejectWithValue }) => {
+  async (checkoutData: CheckoutRequest, { getState, rejectWithValue }) => {
     try {
+      const state = getState() as RootState
+      const token = state.auth.token
+
       const response = await fetch(`${API_CONFIG.baseUrl}/api/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify(checkoutData),
       })
@@ -80,9 +86,19 @@ export const submitCheckout = createAsyncThunk(
 
 export const checkTransactionStatus = createAsyncThunk(
   'cart/checkTransactionStatus',
-  async (wompiTransactionId: string, { rejectWithValue }) => {
+  async (statusToken: string, { getState, rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_CONFIG.baseUrl}/api/checkout/status/${wompiTransactionId}`)
+      const state = getState() as RootState
+      const token = state.auth.token
+
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}/api/checkout/status?token=${statusToken}`,
+        {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      )
       
       if (!response.ok) {
         throw new Error('Failed to check transaction status')
@@ -150,6 +166,7 @@ const cartSlice = createSlice({
       state.acceptancePermalink = null
       state.transactionId = null
       state.wompiTransactionId = null
+      state.statusToken = null
       state.transactionStatus = null
       state.checkoutLoading = false
       state.checkoutError = null
@@ -184,6 +201,7 @@ const cartSlice = createSlice({
         state.checkoutLoading = false
         state.transactionId = action.payload.data.transactionId
         state.wompiTransactionId = action.payload.data.wompiTransactionId
+        state.statusToken = action.payload.data.statusToken
         state.transactionStatus = action.payload.data.status
       })
       .addCase(submitCheckout.rejected, (state, action) => {

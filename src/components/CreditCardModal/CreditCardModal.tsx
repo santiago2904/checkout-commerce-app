@@ -187,9 +187,12 @@ const CreditCardModal = ({ isOpen, onClose, onSubmit }: CreditCardModalProps) =>
       return
     }
     
+    // Limpiar espacios del número de tarjeta antes de guardar
+    const cleanedCardNumber = cardNumber.replace(/\\s/g, '')
+    
     // Guardar en Redux (NO se persiste por configuración de redux-persist)
     const paymentData: CreditCard = {
-      number: cardNumber,
+      number: cleanedCardNumber,
       holderName,
       expiryDate,
       cvv,

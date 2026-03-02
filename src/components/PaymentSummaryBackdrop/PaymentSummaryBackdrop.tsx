@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { RootState, AppDispatch } from '@/store/store'
 import { fetchAcceptanceToken, submitCheckout } from '@/features/cart/cartSlice'
 import { CartItem } from '@/types'
@@ -7,14 +8,13 @@ import './PaymentSummaryBackdrop.scss'
 
 interface PaymentSummaryBackdropProps {
   onClose: () => void
-  onCheckoutComplete: () => void
 }
 
 export const PaymentSummaryBackdrop = ({
   onClose,
-  onCheckoutComplete,
 }: PaymentSummaryBackdropProps) => {
   const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
   const {
     items,
     shippingAddress,
@@ -65,7 +65,7 @@ export const PaymentSummaryBackdrop = ({
       paymentMethod: {
         type: 'CARD' as const,
         cardData: {
-          number: paymentInfo.number,
+          number: paymentInfo.number.replace(/\s/g, ''), // Eliminar espacios
           cvc: paymentInfo.cvv,
           exp_month: expMonth,
           exp_year: expYear,
@@ -80,7 +80,12 @@ export const PaymentSummaryBackdrop = ({
     const result = await dispatch(submitCheckout(checkoutData))
     
     if (submitCheckout.fulfilled.match(result)) {
-      onCheckoutComplete()
+      // Refetch acceptance token para el próximo uso (token de un solo uso)
+      dispatch(fetchAcceptanceToken())
+      
+      // Redirigir a la página de estado con el statusToken
+      const statusToken = result.payload.data.statusToken
+      navigate(`/transaction-status?token=${statusToken}`)
     }
   }
 

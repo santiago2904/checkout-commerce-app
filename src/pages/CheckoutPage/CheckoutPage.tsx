@@ -97,15 +97,6 @@ const CheckoutPage = () => {
     setShowSummaryBackdrop(true)
   }
 
-  const handleCheckoutComplete = () => {
-    setShowSummaryBackdrop(false)
-    setCurrentStep('status')
-    // Start polling
-    if (wompiTransactionId) {
-      dispatch(setPolling(true))
-    }
-  }
-
   const handleSummaryClose = () => {
     setShowSummaryBackdrop(false)
     setCurrentStep('payment')
@@ -297,7 +288,6 @@ const CheckoutPage = () => {
       {showSummaryBackdrop && (
         <PaymentSummaryBackdrop
           onClose={handleSummaryClose}
-          onCheckoutComplete={handleCheckoutComplete}
         />
       )}
     </div>

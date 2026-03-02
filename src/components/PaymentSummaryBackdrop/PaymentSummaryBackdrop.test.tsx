@@ -1,11 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
+import { BrowserRouter } from 'react-router-dom'
 import { PaymentSummaryBackdrop } from './PaymentSummaryBackdrop'
 import cartReducer from '@/features/cart/cartSlice'
 
 // Mock fetch
 global.fetch = jest.fn()
+
+// Mock useNavigate
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}))
 
 const createMockStore = (initialState = {}) => {
   return configureStore({
@@ -18,7 +26,16 @@ const createMockStore = (initialState = {}) => {
 
 describe('PaymentSummaryBackdrop', () => {
   const mockOnClose = jest.fn()
-  const mockOnCheckoutComplete = jest.fn()
+
+  const renderWithRouter = (component: React.ReactElement, store: any) => {
+    return render(
+      <BrowserRouter>
+        <Provider store={store}>
+          {component}
+        </Provider>
+      </BrowserRouter>
+    )
+  }
 
   const mockCartState = {
     cart: {
@@ -52,6 +69,7 @@ describe('PaymentSummaryBackdrop', () => {
       acceptancePermalink: null,
       transactionId: null,
       wompiTransactionId: null,
+      statusToken: null,
       transactionStatus: null,
       checkoutLoading: false,
       checkoutError: null,
@@ -77,13 +95,11 @@ describe('PaymentSummaryBackdrop', () => {
 
   it('should render modal with order summary', () => {
     const store = createMockStore(mockCartState)
-    render(
-      <Provider store={store}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      store
     )
 
     expect(screen.getByText('Resumen del Pedido')).toBeInTheDocument()
@@ -93,13 +109,11 @@ describe('PaymentSummaryBackdrop', () => {
 
   it('should display price breakdown with IVA', () => {
     const store = createMockStore(mockCartState)
-    render(
-      <Provider store={store}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      store
     )
 
     expect(screen.getByText(/Subtotal \(sin IVA\):/i)).toBeInTheDocument()
@@ -110,13 +124,11 @@ describe('PaymentSummaryBackdrop', () => {
 
   it('should display shipping address', () => {
     const store = createMockStore(mockCartState)
-    render(
-      <Provider store={store}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      store
     )
 
     expect(screen.getByText('Dirección de Envío')).toBeInTheDocument()
@@ -127,13 +139,11 @@ describe('PaymentSummaryBackdrop', () => {
 
   it('should render terms checkbox', () => {
     const store = createMockStore(mockCartState)
-    render(
-      <Provider store={store}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      store
     )
 
     const checkbox = screen.getByRole('checkbox')
@@ -150,13 +160,11 @@ describe('PaymentSummaryBackdrop', () => {
       },
     })
     
-    render(
-      <Provider store={storeWithToken}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      storeWithToken
     )
 
     // Wait for component to finish loading
@@ -175,13 +183,11 @@ describe('PaymentSummaryBackdrop', () => {
       },
     })
 
-    render(
-      <Provider store={storeWithToken}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      storeWithToken
     )
 
     const checkbox = screen.getByRole('checkbox')
@@ -202,13 +208,11 @@ describe('PaymentSummaryBackdrop', () => {
       },
     })
     
-    render(
-      <Provider store={storeWithToken}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      storeWithToken
     )
 
     // Wait for component to finish loading
@@ -225,13 +229,11 @@ describe('PaymentSummaryBackdrop', () => {
 
   it('should call onClose when backdrop clicked', () => {
     const store = createMockStore(mockCartState)
-    const { container } = render(
-      <Provider store={store}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    const { container } = renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      store
     )
 
     const backdrop = container.querySelector('.payment-summary-backdrop')
@@ -244,13 +246,11 @@ describe('PaymentSummaryBackdrop', () => {
 
   it('should fetch acceptance token on mount', async () => {
     const store = createMockStore(mockCartState)
-    render(
-      <Provider store={store}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      store
     )
 
     await waitFor(() => {
@@ -267,13 +267,11 @@ describe('PaymentSummaryBackdrop', () => {
       },
     })
 
-    render(
-      <Provider store={storeWithToken}>
-        <PaymentSummaryBackdrop
-          onClose={mockOnClose}
-          onCheckoutComplete={mockOnCheckoutComplete}
-        />
-      </Provider>
+    renderWithRouter(
+      <PaymentSummaryBackdrop
+        onClose={mockOnClose}
+      />,
+      storeWithToken
     )
 
     const termsLink = screen.getByText('Términos y Condiciones')

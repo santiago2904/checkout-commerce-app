@@ -60,6 +60,7 @@ export interface CheckoutResponse {
     reference: string
     paymentMethod: string
     wompiTransactionId: string
+    statusToken: string
     errorMessage: string | null
   }
 }
@@ -175,6 +176,7 @@ export interface CartState {
   acceptancePermalink: string | null
   transactionId: string | null
   wompiTransactionId: string | null
+  statusToken: string | null
   transactionStatus: 'PENDING' | 'APPROVED' | 'DECLINED' | null
   checkoutLoading: boolean
   checkoutError: string | null
