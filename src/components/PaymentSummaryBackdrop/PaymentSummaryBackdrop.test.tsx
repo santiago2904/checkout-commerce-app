@@ -74,6 +74,9 @@ describe('PaymentSummaryBackdrop', () => {
       checkoutLoading: false,
       checkoutError: null,
       isPolling: false,
+      transactions: [],
+      transactionsLoading: false,
+      transactionsError: null,
     },
   }
 

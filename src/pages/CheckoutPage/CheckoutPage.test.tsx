@@ -40,6 +40,9 @@ const createMockStore = (initialState = {}) => {
       checkoutError: null,
       isPolling: false,
       statusToken: null,
+      transactions: [],
+      transactionsLoading: false,
+      transactionsError: null,
     },
     checkout: { transaction: null, loading: false, error: null, pollingActive: false },
   }

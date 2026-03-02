@@ -26,6 +26,19 @@ const ProductPage = () => {
     }
   }
 
+  const getStockInfo = (stock: number) => {
+    if (stock === 0) {
+      return { text: 'Agotado', className: 'product-card__stock--out' }
+    }
+    if (stock === 1) {
+      return { text: 'Solo queda 1 unidad', className: 'product-card__stock--critical' }
+    }
+    if (stock <= 5) {
+      return { text: `Quedan ${stock} unidades`, className: 'product-card__stock--low' }
+    }
+    return { text: `${stock} disponibles`, className: '' }
+  }
+
   if (loading) {
     return (
       <>
@@ -85,13 +98,9 @@ const ProductPage = () => {
                       ${product.price.toLocaleString('es-CO')}
                     </span>
                     <span
-                      className={`product-card__stock ${
-                        product.stock === 0 ? 'product-card__stock--out' : ''
-                      }`}
+                      className={`product-card__stock ${getStockInfo(product.stock).className}`}
                     >
-                      {product.stock > 0
-                        ? `${product.stock} disponibles`
-                        : 'Agotado'}
+                      {getStockInfo(product.stock).text}
                     </span>
                   </div>
                   <button

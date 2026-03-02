@@ -112,8 +112,10 @@ const CheckoutPage = () => {
     dispatch(removeFromCart(productId))
   }
 
-  const handleIncrement = (productId: string, currentQuantity: number) => {
-    dispatch(updateQuantity({ productId, quantity: currentQuantity + 1 }))
+  const handleIncrement = (productId: string, currentQuantity: number, stock: number) => {
+    if (currentQuantity < stock) {
+      dispatch(updateQuantity({ productId, quantity: currentQuantity + 1 }))
+    }
   }
 
   const handleDecrement = (productId: string, currentQuantity: number) => {
@@ -122,6 +124,22 @@ const CheckoutPage = () => {
     } else {
       dispatch(removeFromCart(productId))
     }
+  }
+
+  const getStockMessage = (stock: number, currentQuantity: number) => {
+    if (stock === 0) {
+      return { text: 'Sin stock disponible', className: 'stock-warning' }
+    }
+    if (stock === 1) {
+      return { text: 'Solo queda 1 unidad', className: 'stock-warning' }
+    }
+    if (currentQuantity >= stock) {
+      return { text: `Máximo disponible: ${stock} unidades`, className: 'stock-warning' }
+    }
+    if (stock <= 5) {
+      return { text: `Quedan ${stock} disponibles`, className: 'stock-low' }
+    }
+    return null
   }
 
   if (items.length === 0) {
@@ -236,12 +254,18 @@ const CheckoutPage = () => {
                           <span className="quantity-value">{item.quantity}</span>
                           <button
                             className="quantity-btn"
-                            onClick={() => handleIncrement(item.product.id, item.quantity)}
+                            onClick={() => handleIncrement(item.product.id, item.quantity, item.product.stock)}
                             aria-label="Aumentar cantidad"
+                            disabled={item.quantity >= item.product.stock}
                           >
                             +
                           </button>
                         </div>
+                        {getStockMessage(item.product.stock, item.quantity) && (
+                          <p className={`cart-item__stock-message ${getStockMessage(item.product.stock, item.quantity)?.className}`}>
+                            {getStockMessage(item.product.stock, item.quantity)?.text}
+                          </p>
+                        )}
                         <p className="cart-item__price">
                           ${(item.product.price * item.quantity).toLocaleString('es-CO')}
                         </p>

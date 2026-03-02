@@ -53,6 +53,18 @@ const Header = () => {
 
         {/* Navegación derecha */}
         <nav className="app-header__nav" aria-label="Navegación principal">
+          {/* Transacciones (solo si está autenticado) */}
+          {isAuthenticated && (
+            <button
+              className="app-header__transactions-btn"
+              onClick={() => navigate('/my-transactions')}
+              aria-label="Ver mis transacciones"
+            >
+              <span className="transactions-icon">📋</span>
+              <span className="transactions-text">Mis Pedidos</span>
+            </button>
+          )}
+
           {/* Carrito */}
           <button
             className="app-header__cart-btn"

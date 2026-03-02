@@ -10,6 +10,7 @@ import {
   CheckoutRequest,
   CheckoutResponse,
   TransactionStatus,
+  MyTransactionsResponse,
 } from '@/types'
 
 const initialState: CartState = {
@@ -26,6 +27,9 @@ const initialState: CartState = {
   checkoutLoading: false,
   checkoutError: null,
   isPolling: false,
+  transactions: [],
+  transactionsLoading: false,
+  transactionsError: null,
 }
 
 // Async Thunks
@@ -106,6 +110,40 @@ export const checkTransactionStatus = createAsyncThunk(
       
       const data: TransactionStatus = await response.json()
       return data
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+  }
+)
+
+export const fetchMyTransactions = createAsyncThunk(
+  'cart/fetchMyTransactions',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as RootState
+      const token = state.auth.token
+
+      if (!token) {
+        throw new Error('Authentication required')
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}/api/checkout/my-transactions`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions')
+      }
+      
+      const data: MyTransactionsResponse = await response.json()
+      return data.data
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Unknown error'
@@ -220,6 +258,21 @@ const cartSlice = createSlice({
       .addCase(checkTransactionStatus.rejected, (state, action) => {
         state.checkoutError = action.payload as string
         state.isPolling = false
+      })
+
+    // Fetch My Transactions
+    builder
+      .addCase(fetchMyTransactions.pending, (state) => {
+        state.transactionsLoading = true
+        state.transactionsError = null
+      })
+      .addCase(fetchMyTransactions.fulfilled, (state, action) => {
+        state.transactionsLoading = false
+        state.transactions = action.payload
+      })
+      .addCase(fetchMyTransactions.rejected, (state, action) => {
+        state.transactionsLoading = false
+        state.transactionsError = action.payload as string
       })
   },
 })

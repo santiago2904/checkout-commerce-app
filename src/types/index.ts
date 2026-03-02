@@ -181,6 +181,9 @@ export interface CartState {
   checkoutLoading: boolean
   checkoutError: string | null
   isPolling: boolean
+  transactions: Transaction[]
+  transactionsLoading: boolean
+  transactionsError: string | null
 }
 
 export interface CheckoutState {
@@ -188,4 +191,44 @@ export interface CheckoutState {
   loading: boolean
   error: string | null
   pollingActive: boolean
+}
+
+// Transaction History Types
+export interface TransactionItem {
+  productId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  subtotal: number
+}
+
+export interface DeliveryInfo {
+  deliveryId: string
+  status: string
+  trackingNumber: string | null
+  recipientName: string
+  address: string
+  city: string
+  estimatedDelivery: string | null
+  actualDelivery: string | null
+}
+
+export interface Transaction {
+  transactionId: string
+  reference: string
+  status: 'PENDING' | 'APPROVED' | 'DECLINED'
+  amount: number
+  currency: string
+  paymentMethod: string
+  wompiTransactionId: string
+  createdAt: string
+  updatedAt: string
+  items: TransactionItem[]
+  delivery?: DeliveryInfo
+}
+
+export interface MyTransactionsResponse {
+  statusCode: number
+  message: string
+  data: Transaction[]
 }
