@@ -57,10 +57,6 @@ export const checkTransactionStatus = createAsyncThunk<
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            // Prevent CloudFront and browser caching
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
           },
         }
       )

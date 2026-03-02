@@ -79,10 +79,11 @@ export const PaymentSummaryBackdrop = ({
 
     const result = await dispatch(submitCheckout(checkoutData))
     
+    // Siempre refetch acceptance token después de un intento de checkout
+    // (token de un solo uso, se consume incluso si falla)
+    dispatch(fetchAcceptanceToken())
+    
     if (submitCheckout.fulfilled.match(result)) {
-      // Refetch acceptance token para el próximo uso (token de un solo uso)
-      dispatch(fetchAcceptanceToken())
-      
       // Redirigir a la página de estado con el statusToken
       const statusToken = result.payload.data.statusToken
       navigate(`/transaction-status?token=${statusToken}`)
