@@ -200,6 +200,7 @@ export interface TransactionItem {
   quantity: number
   unitPrice: number
   subtotal: number
+  imageUrl?: string
 }
 
 export interface DeliveryInfo {

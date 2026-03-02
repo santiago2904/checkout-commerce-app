@@ -130,7 +130,7 @@ export const fetchMyTransactions = createAsyncThunk(
       }
 
       const response = await fetch(
-        `${API_CONFIG.baseUrl}/api/checkout/my-transactions`,
+        `${API_CONFIG.baseUrl}/api/checkout/me/transactions`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

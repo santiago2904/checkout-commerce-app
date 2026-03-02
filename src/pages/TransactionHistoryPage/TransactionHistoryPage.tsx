@@ -144,15 +144,26 @@ const TransactionHistoryPage = () => {
 
                   <div className="transaction-items">
                     <h4>Productos:</h4>
-                    <ul>
+                    <div className="items-list">
                       {transaction.items.map((item, index) => (
-                        <li key={index}>
-                          <span className="item-name">{item.productName}</span>
-                          <span className="item-quantity">x{item.quantity}</span>
-                          <span className="item-price">{formatCurrency(item.subtotal)}</span>
-                        </li>
+                        <div key={index} className="transaction-item">
+                          {item.imageUrl && (
+                            <img
+                              src={item.imageUrl}
+                              alt={item.productName}
+                              className="transaction-item__image"
+                            />
+                          )}
+                          <div className="transaction-item__details">
+                            <span className="item-name">{item.productName}</span>
+                            <div className="transaction-item__info">
+                              <span className="item-quantity">x{item.quantity}</span>
+                              <span className="item-price">{formatCurrency(item.subtotal)}</span>
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
 
                   {transaction.delivery && (
