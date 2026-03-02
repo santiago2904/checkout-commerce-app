@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchProducts } from '@/features/products/productsSlice'
 import { addToCart } from '@/features/cart/cartSlice'
 import { Product } from '@/types'
+import Header from '@/components/Header/Header'
 import './ProductPage.scss'
 
 const ProductPage = () => {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const { items: products, loading, error } = useAppSelector((state) => state.products)
   const { isAuthenticated } = useAppSelector((state) => state.auth)
 
@@ -18,39 +21,60 @@ const ProductPage = () => {
   const handleBuyProduct = (product: Product) => {
     if (product.stock > 0) {
       dispatch(addToCart({ product, quantity: 1 }))
-      // Aquí podrías agregar navegación al siguiente paso
-      alert(`${product.name} añadido al carrito`)
+      // Navegar a checkout
+      navigate('/checkout')
     }
+  }
+
+  const getStockInfo = (stock: number) => {
+    if (stock === 0) {
+      return { text: 'Agotado', className: 'product-card__stock--out' }
+    }
+    if (stock === 1) {
+      return { text: 'Solo queda 1 unidad', className: 'product-card__stock--critical' }
+    }
+    if (stock <= 5) {
+      return { text: `Quedan ${stock} unidades`, className: 'product-card__stock--low' }
+    }
+    return { text: `${stock} disponibles`, className: '' }
   }
 
   if (loading) {
     return (
-      <div className="product-page">
-        <div className="loading">Cargando productos...</div>
-      </div>
+      <>
+        <Header />
+        <div className="product-page">
+          <div className="loading">Cargando productos...</div>
+        </div>
+      </>
     )
   }
 
   if (error) {
     return (
-      <div className="product-page">
-        <div className="error">
-          <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={() => dispatch(fetchProducts())}>Reintentar</button>
+      <>
+        <Header />
+        <div className="product-page">
+          <div className="error">
+            <h2>Error</h2>
+            <p>{error}</p>
+            <button onClick={() => dispatch(fetchProducts())}>Reintentar</button>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="product-page">
-      <header className="product-page__header">
-        <h1>Productos Disponibles</h1>
-        {!isAuthenticated && (
-          <p className="auth-warning">⚠️ Inicia sesión para completar tu compra</p>
-        )}
-      </header>
+    <>
+      <Header />
+      <div className="product-page">
+        <div className="product-page__header">
+          <h1>Productos Disponibles</h1>
+          {!isAuthenticated && (
+            <p className="auth-warning">⚠️ Inicia sesión para completar tu compra</p>
+          )}
+        </div>
 
       <div className="product-page__grid">
         {products.length === 0 ? (
@@ -74,13 +98,9 @@ const ProductPage = () => {
                       ${product.price.toLocaleString('es-CO')}
                     </span>
                     <span
-                      className={`product-card__stock ${
-                        product.stock === 0 ? 'product-card__stock--out' : ''
-                      }`}
+                      className={`product-card__stock ${getStockInfo(product.stock).className}`}
                     >
-                      {product.stock > 0
-                        ? `${product.stock} disponibles`
-                        : 'Agotado'}
+                      {getStockInfo(product.stock).text}
                     </span>
                   </div>
                   <button
@@ -97,6 +117,7 @@ const ProductPage = () => {
         )}
       </div>
     </div>
+    </>
   )
 }
 

@@ -41,10 +41,12 @@ describe('DeliveryForm Component', () => {
     it('debe renderizar todos los campos requeridos', () => {
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/nombre completo|destinatario/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/dirección/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/ciudad/i)).toBeInTheDocument()
-      expect(screen.getByLabelText(/código postal/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/departamento|región/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/país/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/teléfono/i)).toBeInTheDocument()
     })
 
@@ -57,6 +59,17 @@ describe('DeliveryForm Component', () => {
   })
 
   describe('Validaciones de campos requeridos', () => {
+    it('debe mostrar error cuando el email está vacío', async () => {
+      renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
+      
+      const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
+      fireEvent.click(submitButton)
+      
+      await waitFor(() => {
+        expect(screen.getByText(/email.*requerido/i)).toBeInTheDocument()
+      })
+    })
+
     it('debe mostrar error cuando el nombre está vacío', async () => {
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
@@ -90,14 +103,30 @@ describe('DeliveryForm Component', () => {
       })
     })
 
-    it('debe mostrar error cuando el código postal está vacío', async () => {
+    it('debe mostrar error cuando la región está vacía', async () => {
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
       fireEvent.click(submitButton)
       
       await waitFor(() => {
-        expect(screen.getByText(/código postal.*requerido/i)).toBeInTheDocument()
+        expect(screen.getByText(/región.*requerida|departamento.*requerida/i)).toBeInTheDocument()
+      })
+    })
+
+    it('debe mostrar error cuando el país está vacío', async () => {
+      const user = userEvent.setup()
+      renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
+      
+      // Clear the default 'Colombia' value
+      const countryInput = screen.getByLabelText(/país/i)
+      await user.clear(countryInput)
+      
+      const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
+      fireEvent.click(submitButton)
+      
+      await waitFor(() => {
+        expect(screen.getByText(/país.*requerido/i)).toBeInTheDocument()
       })
     })
 
@@ -113,14 +142,19 @@ describe('DeliveryForm Component', () => {
     })
 
     it('debe mostrar todos los errores cuando todos los campos están vacíos', async () => {
+      const user = userEvent.setup()
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
+      
+      // Clear the default country value
+      const countryInput = screen.getByLabelText(/país/i)
+      await user.clear(countryInput)
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
       fireEvent.click(submitButton)
       
       await waitFor(() => {
         const errors = screen.getAllByText(/requerido|requerida/i)
-        expect(errors.length).toBeGreaterThanOrEqual(5)
+        expect(errors.length).toBeGreaterThanOrEqual(7)
       })
     })
   })
@@ -143,54 +177,65 @@ describe('DeliveryForm Component', () => {
       })
     })
 
-    it('debe validar formato de código postal', async () => {
+    it('debe validar formato de email', async () => {
       const user = userEvent.setup()
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
-      const postalInput = screen.getByLabelText(/código postal/i)
-      await user.type(postalInput, 'abc')
+      // Fill all fields with valid values except email
+      await user.type(screen.getByLabelText(/nombre completo|destinatario/i), 'Juan Pérez')
+      await user.type(screen.getByLabelText(/dirección/i), 'Calle 123 #45-67')
+      await user.type(screen.getByLabelText(/ciudad/i), 'Bogotá')
+      await user.type(screen.getByLabelText(/departamento|región/i), 'Cundinamarca')
+      await user.type(screen.getByLabelText(/teléfono/i), '+573001234567')
+      
+      // Fill email with invalid format
+      const emailInput = screen.getByLabelText(/email/i)
+      await user.type(emailInput, 'invalid-email-format')
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
-      fireEvent.click(submitButton)
+      await user.click(submitButton)
       
       await waitFor(() => {
         expect(
-          screen.getByText(/código postal.*inválido/i)
+          screen.getByText(/email.*inválido/i)
         ).toBeInTheDocument()
       })
     })
 
-    it('debe validar formato de teléfono (solo números)', async () => {
+    it('debe validar formato de teléfono colombiano', async () => {
       const user = userEvent.setup()
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
       const phoneInput = screen.getByLabelText(/teléfono/i)
-      await user.type(phoneInput, 'abc123')
+      await user.type(phoneInput, '3001234567')
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
       fireEvent.click(submitButton)
       
       await waitFor(() => {
         expect(
-          screen.getByText(/teléfono.*inválido|solo números/i)
+          screen.getByText(/teléfono.*formato.*\+573001234567/i)
         ).toBeInTheDocument()
       })
     })
 
-    it('debe validar longitud mínima del teléfono (10 dígitos)', async () => {
+    it('debe aceptar teléfono en formato correcto', async () => {
       const user = userEvent.setup()
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
+      await user.type(screen.getByLabelText(/email/i), 'test@test.com')
+      await user.type(screen.getByLabelText(/nombre completo|destinatario/i), 'Juan Pérez')
+      await user.type(screen.getByLabelText(/dirección/i), 'Calle 123 #45-67')
+      await user.type(screen.getByLabelText(/ciudad/i), 'Bogotá')
+      await user.type(screen.getByLabelText(/departamento|región/i), 'Cundinamarca')
       const phoneInput = screen.getByLabelText(/teléfono/i)
-      await user.type(phoneInput, '123456')
+      await user.type(phoneInput, '+573001234567')
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
       fireEvent.click(submitButton)
       
       await waitFor(() => {
-        expect(
-          screen.getByText(/teléfono.*10.*dígitos/i)
-        ).toBeInTheDocument()
+        expect(mockOnSubmit).toHaveBeenCalled()
       })
     })
   })
@@ -200,11 +245,12 @@ describe('DeliveryForm Component', () => {
       const user = userEvent.setup()
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
+      await user.type(screen.getByLabelText(/email/i), 'test@test.com')
       await user.type(screen.getByLabelText(/nombre completo|destinatario/i), 'Juan Pérez')
       await user.type(screen.getByLabelText(/dirección/i), 'Calle 123 #45-67')
       await user.type(screen.getByLabelText(/ciudad/i), 'Bogotá')
-      await user.type(screen.getByLabelText(/código postal/i), '110111')
-      await user.type(screen.getByLabelText(/teléfono/i), '3001234567')
+      await user.type(screen.getByLabelText(/departamento|región/i), 'Cundinamarca')
+      await user.type(screen.getByLabelText(/teléfono/i), '+573001234567')
       
       const nameInput = screen.getByLabelText(/nombre completo|destinatario/i) as HTMLInputElement
       expect(nameInput.value).toBe('Juan Pérez')
@@ -237,11 +283,12 @@ describe('DeliveryForm Component', () => {
       const user = userEvent.setup()
       const { store } = renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
+      await user.type(screen.getByLabelText(/email/i), 'customer@test.com')
       await user.type(screen.getByLabelText(/nombre completo|destinatario/i), 'Juan Pérez')
       await user.type(screen.getByLabelText(/dirección/i), 'Calle 123 #45-67')
       await user.type(screen.getByLabelText(/ciudad/i), 'Bogotá')
-      await user.type(screen.getByLabelText(/código postal/i), '110111')
-      await user.type(screen.getByLabelText(/teléfono/i), '3001234567')
+      await user.type(screen.getByLabelText(/departamento|región/i), 'Cundinamarca')
+      await user.type(screen.getByLabelText(/teléfono/i), '+573001234567')
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
       fireEvent.click(submitButton)
@@ -249,11 +296,13 @@ describe('DeliveryForm Component', () => {
       await waitFor(() => {
         const state = store.getState()
         expect(state.cart.shippingAddress).toBeDefined()
-        expect(state.cart.shippingAddress?.fullName).toBe('Juan Pérez')
-        expect(state.cart.shippingAddress?.address).toBe('Calle 123 #45-67')
+        expect(state.cart.shippingAddress?.recipientName).toBe('Juan Pérez')
+        expect(state.cart.shippingAddress?.addressLine1).toBe('Calle 123 #45-67')
         expect(state.cart.shippingAddress?.city).toBe('Bogotá')
-        expect(state.cart.shippingAddress?.postalCode).toBe('110111')
-        expect(state.cart.shippingAddress?.phone).toBe('3001234567')
+        expect(state.cart.shippingAddress?.region).toBe('Cundinamarca')
+        expect(state.cart.shippingAddress?.country).toBe('Colombia')
+        expect(state.cart.shippingAddress?.recipientPhone).toBe('+573001234567')
+        expect(state.cart.customerEmail).toBe('customer@test.com')
       })
     })
 
@@ -261,11 +310,12 @@ describe('DeliveryForm Component', () => {
       const user = userEvent.setup()
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
+      await user.type(screen.getByLabelText(/email/i), 'test@test.com')
       await user.type(screen.getByLabelText(/nombre completo|destinatario/i), 'Juan Pérez')
       await user.type(screen.getByLabelText(/dirección/i), 'Calle 123 #45-67')
       await user.type(screen.getByLabelText(/ciudad/i), 'Bogotá')
-      await user.type(screen.getByLabelText(/código postal/i), '110111')
-      await user.type(screen.getByLabelText(/teléfono/i), '3001234567')
+      await user.type(screen.getByLabelText(/departamento|región/i), 'Cundinamarca')
+      await user.type(screen.getByLabelText(/teléfono/i), '+573001234567')
       
       const submitButton = screen.getByRole('button', { name: /continuar|siguiente/i })
       fireEvent.click(submitButton)
@@ -295,22 +345,26 @@ describe('DeliveryForm Component', () => {
         cart: {
           items: [],
           shippingAddress: {
-            fullName: 'María García',
-            address: 'Carrera 50 #20-30',
+            recipientName: 'María García',
+            addressLine1: 'Carrera 50 #20-30',
             city: 'Medellín',
-            postalCode: '050001',
-            phone: '3109876543',
+            region: 'Antioquia',
+            country: 'Colombia',
+            recipientPhone: '+573109876543',
           },
           paymentInfo: null,
+          customerEmail: 'maria@test.com',
         },
       }
       
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />, initialState)
       
+      const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement
       const nameInput = screen.getByLabelText(/nombre completo|destinatario/i) as HTMLInputElement
       const addressInput = screen.getByLabelText(/dirección/i) as HTMLInputElement
       const cityInput = screen.getByLabelText(/ciudad/i) as HTMLInputElement
       
+      expect(emailInput.value).toBe('maria@test.com')
       expect(nameInput.value).toBe('María García')
       expect(addressInput.value).toBe('Carrera 50 #20-30')
       expect(cityInput.value).toBe('Medellín')
@@ -321,10 +375,12 @@ describe('DeliveryForm Component', () => {
     it('debe tener labels asociados a todos los inputs', () => {
       renderWithStore(<DeliveryForm onSubmit={mockOnSubmit} />)
       
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/nombre completo|destinatario/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/dirección/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/ciudad/i)).toBeInTheDocument()
-      expect(screen.getByLabelText(/código postal/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/departamento|región/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/país/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/teléfono/i)).toBeInTheDocument()
     })
 

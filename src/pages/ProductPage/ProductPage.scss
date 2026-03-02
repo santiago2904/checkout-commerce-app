@@ -2,7 +2,7 @@
 
 .product-page {
   min-height: 100vh;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
   background-color: #f5f5f5;
 
   &__header {
@@ -13,6 +13,7 @@
       font-size: 1.5rem;
       color: #333;
       margin-bottom: 0.5rem;
+      margin-top: 0;
     }
 
     .auth-warning {
@@ -127,10 +128,24 @@
     padding: 0.25rem 0.5rem;
     background-color: #e8f5e9;
     border-radius: 4px;
+    font-weight: 500;
 
     &--out {
       background-color: #ffebee;
       color: #c62828;
+      font-weight: 600;
+    }
+
+    &--critical {
+      background-color: #fff3e0;
+      color: #e65100;
+      font-weight: 600;
+    }
+
+    &--low {
+      background-color: #fff8e1;
+      color: #f57c00;
+      font-weight: 600;
     }
   }
 

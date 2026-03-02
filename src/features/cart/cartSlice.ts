@@ -1,11 +1,156 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { CartState, Product, ShippingAddress, CreditCard } from '@/types'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import API_CONFIG from '@/config/api'
+import type { RootState } from '@/store/store'
+import {
+  CartState,
+  Product,
+  ShippingAddress,
+  CreditCard,
+  WompiAcceptanceResponse,
+  CheckoutRequest,
+  CheckoutResponse,
+  TransactionStatus,
+  MyTransactionsResponse,
+} from '@/types'
 
 const initialState: CartState = {
   items: [],
   shippingAddress: null,
   paymentInfo: null,
+  customerEmail: null,
+  acceptanceToken: null,
+  acceptancePermalink: null,
+  transactionId: null,
+  wompiTransactionId: null,
+  statusToken: null,
+  transactionStatus: null,
+  checkoutLoading: false,
+  checkoutError: null,
+  isPolling: false,
+  transactions: [],
+  transactionsLoading: false,
+  transactionsError: null,
 }
+
+// Async Thunks
+export const fetchAcceptanceToken = createAsyncThunk(
+  'cart/fetchAcceptanceToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.wompiApiUrl}/merchants/${API_CONFIG.wompiPublicKey}`
+      )
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch acceptance token')
+      }
+      
+      const data: WompiAcceptanceResponse = await response.json()
+      return {
+        acceptanceToken: data.data.presigned_acceptance.acceptance_token,
+        acceptancePermalink: data.data.presigned_acceptance.permalink,
+      }
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+  }
+)
+
+export const submitCheckout = createAsyncThunk(
+  'cart/submitCheckout',
+  async (checkoutData: CheckoutRequest, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as RootState
+      const token = state.auth.token
+
+      const response = await fetch(`${API_CONFIG.baseUrl}/api/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(checkoutData),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Checkout failed')
+      }
+      
+      const data: CheckoutResponse = await response.json()
+      return data
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+  }
+)
+
+export const checkTransactionStatus = createAsyncThunk(
+  'cart/checkTransactionStatus',
+  async (statusToken: string, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as RootState
+      const token = state.auth.token
+
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}/api/checkout/status?token=${statusToken}`,
+        {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      )
+      
+      if (!response.ok) {
+        throw new Error('Failed to check transaction status')
+      }
+      
+      const data: TransactionStatus = await response.json()
+      return data
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+  }
+)
+
+export const fetchMyTransactions = createAsyncThunk(
+  'cart/fetchMyTransactions',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as RootState
+      const token = state.auth.token
+
+      if (!token) {
+        throw new Error('Authentication required')
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}/api/checkout/me/transactions`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions')
+      }
+      
+      const data: MyTransactionsResponse = await response.json()
+      return data.data
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+  }
+)
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -48,7 +193,87 @@ const cartSlice = createSlice({
     setPaymentInfo: (state, action: PayloadAction<CreditCard>) => {
       state.paymentInfo = action.payload
     },
+    setCustomerEmail: (state, action: PayloadAction<string>) => {
+      state.customerEmail = action.payload
+    },
+    setPolling: (state, action: PayloadAction<boolean>) => {
+      state.isPolling = action.payload
+    },
+    resetCheckout: (state) => {
+      state.acceptanceToken = null
+      state.acceptancePermalink = null
+      state.transactionId = null
+      state.wompiTransactionId = null
+      state.statusToken = null
+      state.transactionStatus = null
+      state.checkoutLoading = false
+      state.checkoutError = null
+      state.isPolling = false
+    },
     clearCartData: () => initialState,
+  },
+  extraReducers: (builder) => {
+    // Fetch Acceptance Token
+    builder
+      .addCase(fetchAcceptanceToken.pending, (state) => {
+        state.checkoutLoading = true
+        state.checkoutError = null
+      })
+      .addCase(fetchAcceptanceToken.fulfilled, (state, action) => {
+        state.checkoutLoading = false
+        state.acceptanceToken = action.payload.acceptanceToken
+        state.acceptancePermalink = action.payload.acceptancePermalink
+      })
+      .addCase(fetchAcceptanceToken.rejected, (state, action) => {
+        state.checkoutLoading = false
+        state.checkoutError = action.payload as string
+      })
+
+    // Submit Checkout
+    builder
+      .addCase(submitCheckout.pending, (state) => {
+        state.checkoutLoading = true
+        state.checkoutError = null
+      })
+      .addCase(submitCheckout.fulfilled, (state, action) => {
+        state.checkoutLoading = false
+        state.transactionId = action.payload.data.transactionId
+        state.wompiTransactionId = action.payload.data.wompiTransactionId
+        state.statusToken = action.payload.data.statusToken
+        state.transactionStatus = action.payload.data.status
+      })
+      .addCase(submitCheckout.rejected, (state, action) => {
+        state.checkoutLoading = false
+        state.checkoutError = action.payload as string
+      })
+
+    // Check Transaction Status
+    builder
+      .addCase(checkTransactionStatus.pending, (state) => {
+        state.checkoutError = null
+      })
+      .addCase(checkTransactionStatus.fulfilled, (state, action) => {
+        state.transactionStatus = action.payload.data.status
+      })
+      .addCase(checkTransactionStatus.rejected, (state, action) => {
+        state.checkoutError = action.payload as string
+        state.isPolling = false
+      })
+
+    // Fetch My Transactions
+    builder
+      .addCase(fetchMyTransactions.pending, (state) => {
+        state.transactionsLoading = true
+        state.transactionsError = null
+      })
+      .addCase(fetchMyTransactions.fulfilled, (state, action) => {
+        state.transactionsLoading = false
+        state.transactions = action.payload
+      })
+      .addCase(fetchMyTransactions.rejected, (state, action) => {
+        state.transactionsLoading = false
+        state.transactionsError = action.payload as string
+      })
   },
 })
 
@@ -59,6 +284,9 @@ export const {
   clearCart,
   setShippingAddress,
   setPaymentInfo,
+  setCustomerEmail,
+  setPolling,
+  resetCheckout,
   clearCartData,
 } = cartSlice.actions
 

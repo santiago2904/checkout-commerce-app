@@ -84,7 +84,7 @@ describe('CreditCardModal Component', () => {
       
       // Buscar el logo o texto de VISA
       await waitFor(() => {
-        expect(screen.getByAltText(/visa/i) || screen.getByText(/visa/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/visa/i)).toBeInTheDocument()
       })
     })
 
@@ -98,7 +98,7 @@ describe('CreditCardModal Component', () => {
       await user.type(cardInput, '4')
       
       await waitFor(() => {
-        expect(screen.getByAltText(/visa/i) || screen.getByText(/visa/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/visa/i)).toBeInTheDocument()
       })
     })
   })
@@ -114,9 +114,7 @@ describe('CreditCardModal Component', () => {
       await user.type(cardInput, '5111111111111111')
       
       await waitFor(() => {
-        expect(
-          screen.getByAltText(/mastercard/i) || screen.getByText(/mastercard/i)
-        ).toBeInTheDocument()
+        expect(screen.getByLabelText(/mastercard/i)).toBeInTheDocument()
       })
     })
 
@@ -130,9 +128,7 @@ describe('CreditCardModal Component', () => {
       await user.type(cardInput, '5555555555554444')
       
       await waitFor(() => {
-        expect(
-          screen.getByAltText(/mastercard/i) || screen.getByText(/mastercard/i)
-        ).toBeInTheDocument()
+        expect(screen.getByLabelText(/mastercard/i)).toBeInTheDocument()
       })
     })
 
@@ -146,9 +142,7 @@ describe('CreditCardModal Component', () => {
       await user.type(cardInput, '2221000000000000')
       
       await waitFor(() => {
-        expect(
-          screen.getByAltText(/mastercard/i) || screen.getByText(/mastercard/i)
-        ).toBeInTheDocument()
+        expect(screen.getByLabelText(/mastercard/i)).toBeInTheDocument()
       })
     })
 
@@ -162,9 +156,7 @@ describe('CreditCardModal Component', () => {
       await user.type(cardInput, '2500000000000000')
       
       await waitFor(() => {
-        expect(
-          screen.getByAltText(/mastercard/i) || screen.getByText(/mastercard/i)
-        ).toBeInTheDocument()
+        expect(screen.getByLabelText(/mastercard/i)).toBeInTheDocument()
       })
     })
   })
